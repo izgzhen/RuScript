@@ -1,3 +1,6 @@
 [submodule "rust-gc"]
 	path = rust-gc
 	url = https://github.com/Manishearth/rust-gc
+[submodule "rust-readline"]
+	path = rust-readline
+	url = https://github.com/shaleh/rust-readline
