@@ -5,6 +5,10 @@ use gc::*;
 
 
 pub fn interprete(st: &Statement, env : &mut Environment) {
+    // let lhs_ : String;
+    // let rhs_ : Gc<Object>;
+    let mut lhs_ = None;
+    let mut rhs_ = None;
     match st {
         &Assign(ref name, ref expr) => {
             match eval(expr, &env) {
@@ -13,7 +17,25 @@ pub fn interprete(st: &Statement, env : &mut Environment) {
                 }
                 None => {}
             }
+        },
+        &Aliasing(ref lhs, ref rhs) => {
+            let mut x = None;
+            x = env.objects.get(rhs);
+            match x {
+                Some(gced) => {
+                    lhs_ = Some(lhs.clone());
+                    rhs_ = Some(gced.clone());
+                },
+                None => { }
+            }
         }
+    }
+    match lhs_ {
+        Some(lhs) => match rhs_ {
+            Some(rhs) => { env.objects.insert(lhs, rhs); },
+            None => {}
+        },
+        None => {}
     }
 }
 
@@ -67,7 +89,11 @@ fn evalFactor(f : &Factor, env : &Environment) -> Option<PrimitiveType> {
     }
 }
 
-pub fn exampleStatement() -> Statement {
-    Assign("x".to_string(), Expr::Single(Term::Single(Factor::Int(1))))
+pub fn assignToA() -> Statement {
+    Assign("a".to_string(), Expr::Single(Term::Single(Factor::Int(1))))
+}
+
+pub fn aliasingToB() -> Statement {
+    Aliasing("b".to_string(), "a".to_string())
 }
 

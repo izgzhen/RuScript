@@ -14,12 +14,6 @@ extern crate gc;
 // use std::str;
 // use std::str::FromStr;
 
-
-// fn parse(s : &str) -> statement {
-
-// }
-
-
 // use std::collections::HashMap;
 // use std::cell::{self, Cell, RefCell, BorrowState};
 // use std::ptr;
