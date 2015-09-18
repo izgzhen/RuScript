@@ -1,43 +1,27 @@
-#![feature(box_syntax)]
+ #![feature(custom_derive)]
+ #![feature(box_syntax)]
 
 extern crate ruscript;
 extern crate gc;
+
 use std::collections::HashMap;
 use ruscript::object::*;
 use ruscript::interpreter::*;
-use gc::Gc;
+use gc::*;
 
 fn main() {
-    let mut env = Environment {
-        objects : &mut HashMap::new()
-    };
+    {
+        let mut env = Environment {
+            objects : &mut HashMap::new()
+        };
 
-    println!("{:?}", env.objects.len());
+        let prim = Object::PrimObj(PrimitiveType::PrimInt(1));
+        let prim2 = Object::PrimObj(PrimitiveType::PrimInt(2));
+        env.objects.insert("a".to_string(), Gc::new(prim));
+        env.objects.insert("a".to_string(), Gc::new(prim2)); // The first 1 is unaccessible, so it should be collected
+    }
 
-    let prim = Object::PrimObj(PrimitiveType::PrimInt(1));
-    let prim2 = Object::PrimObj(PrimitiveType::PrimInt(1));
-
-    env.objects.insert("hello".to_string(), Gc::new(prim));
-
-    println!("{:?}", env.objects.len());
-
-    let templ = Template {
-        name : "test".to_string(),
-        methods : HashMap::new(),
-    };
-
-    let comp = Complex {
-        template : box templ,
-        attributes : vec![box prim2]
-    };
-
-    env.objects.insert("world".to_string(), Gc::new(Object::CompObj(comp)));
-
-    println!("{:?}", env.objects.len());
-
-    let st = exampleStatement(); // x := 1
-
-    interprete(&st, &mut env);
-
-    println!("{:?}", env.objects.len());    
+    gc::force_collect();
 }
+
+

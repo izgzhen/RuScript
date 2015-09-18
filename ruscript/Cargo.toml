@@ -11,6 +11,10 @@ path = "src/lib.rs"
 name = "main"
 path = "src/main.rs"
 
+[[bin]]
+name = "exp"
+path = "src/exp.rs"
+
 [dependencies.gc]
 path = "../rust-gc/gc"
 version = "0.0.4"
@@ -25,3 +29,4 @@ version = "0.1.0"
 
 [dependencies]
 nom = "~0.4.0"
+

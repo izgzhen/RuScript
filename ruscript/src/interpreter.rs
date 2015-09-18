@@ -54,7 +54,7 @@ fn evalFactor(f : &Factor, env : &Environment) -> Option<PrimitiveType> {
             match env.objects.get(name) {
                 Some(gced) => {
                     match *(gced.clone()) {
-                        Object::PrimObj(prim) => Some(prim),
+                        Object::PrimObj(ref prim) => Some(prim.clone()),
                         _ => None
                     }
                 },

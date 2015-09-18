@@ -4,7 +4,13 @@ use gc::*;
 use std::ops::Add;
 use self::PrimitiveType::*;
 
-#[derive(Debug, Copy, Clone, Trace)]
+
+// used for profiling
+use std::cell::Cell;
+thread_local!(static COUNTER: Cell<u8> = Cell::new(0u8));
+
+
+#[derive(Debug, Clone, Trace)]
 pub enum PrimitiveType {
     PrimInt(i32),
 }
@@ -50,6 +56,12 @@ pub enum Object {
     PrimObj(PrimitiveType),
     FuncObj(Function),
     CompObj(Complex),
+}
+
+impl Drop for Object {
+    fn drop(&mut self) {
+        println!("Dropping Object");
+    }
 }
 
 trait Entity {

@@ -22,4 +22,5 @@ pub enum Expr {
 #[derive(Debug, Trace)]
 pub enum Statement {
     Assign(String, Expr),
+    // Aliasing(String, String),
 }
