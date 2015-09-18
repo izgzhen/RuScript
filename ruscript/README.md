@@ -17,3 +17,9 @@ The top-level environment will have a table of all names. The names could be pri
 So there would be four hash tables. The first one will be mapping string to enum type, the second one will be string to `Complex` struct, the third one will be string to `Function` struct, the fourth one will be string to `Module` object.
 
 However, they all share a similar standard message passing based interface.
+
+
+### TODOs
+* use nom to rewrite the parser
+
+

@@ -1,11 +1,27 @@
 use ast::*;
 use std::collections::HashMap;
 use gc::*;
+use std::ops::Add;
+use self::PrimitiveType::*;
 
 #[derive(Debug, Copy, Clone, Trace)]
 pub enum PrimitiveType {
     PrimInt(i32),
 }
+
+impl Add<PrimitiveType> for PrimitiveType {
+    type Output = PrimitiveType;
+    fn add(self, other: PrimitiveType) -> PrimitiveType {
+        match self {
+            PrimInt(i) => {
+                match other {
+                    PrimInt(j) => PrimInt(i + j)
+                }
+            }
+        }
+    }
+}
+
 
 fn call_builtin(prim : &PrimitiveType, name : &str, params : &HashMap<&str, & mut Object>) -> Option<Object>{
     unimplemented!()
@@ -13,20 +29,20 @@ fn call_builtin(prim : &PrimitiveType, name : &str, params : &HashMap<&str, & mu
 
 #[derive(Trace)]
 pub struct Function {
-    arguments : Vec<String>,
-    body : Vec<Statement>,
+    pub arguments : Vec<String>,
+    pub body : Vec<Statement>,
 }
 
 pub struct Template {
-    name : String,
-    methods : HashMap<String, Function>,
+    pub name : String,
+    pub methods : HashMap<String, Function>,
 }
 
 #[derive(Trace)]
 pub struct Complex {
     #[unsafe_ignore_trace]
-    template : Box<Template>,
-    attributes : Vec<Box<Complex>>,
+    pub template : Box<Template>,
+    pub attributes : Vec<Box<Object>>,
 }
 
 #[derive(Trace)]
@@ -58,5 +74,5 @@ impl Entity for PrimitiveType {
 
 
 pub struct Environment<'a> {
-    pub primitives : &'a mut HashMap<String, Gc<Object>>,
+    pub objects : &'a mut HashMap<String, Gc<Object>>,
 }
