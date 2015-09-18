@@ -1,6 +1,7 @@
 #![crate_name = "ruscript"]
 
-#![feature(plugin, custom_derive)]
+#![feature(plugin, custom_derive, custom_attribute)]
+#![feature(box_syntax)]
 
 #![plugin(gc_plugin)]
 extern crate gc;
@@ -19,32 +20,15 @@ extern crate gc;
 // }
 
 
-#[derive(Debug)]
-enum Factor {
-    Int(i32),
-    Var(&'static str),
-    Single(Box<Expr>),
-}
+// use std::collections::HashMap;
+// use std::cell::{self, Cell, RefCell, BorrowState};
+// use std::ptr;
+// use std::thread;
+// use std::mem;
+// use gc::Gc;
 
-#[derive(Debug)]
-enum Term {
-    Multi(Factor, Factor),
-    Single(Factor)
-}
+pub mod object;
+pub mod ast;
+pub mod interpreter;
 
-#[derive(Debug)]
-enum Expr {
-    Plus(Term, Term),
-    Single(Term),
-}
-
-#[derive(Debug)]
-enum Statement {
-    Assign(&'static str, Expr),
-}
-
-pub fn main() {
-    let stat = Statement::Assign("a", Expr::Single(Term::Single(Factor::Int(1))));
-    println!("{:?}", stat);
-}
-
+pub use ast::*;
