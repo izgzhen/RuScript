@@ -1,55 +1,81 @@
 use std::collections::HashMap;
 
-#[macro_use]
 use gc::*;
 
 use self::_Object::*;
 
 // used for profiling
 use std::cell::Cell;
-thread_local!(static COUNTER: Cell<u8> = Cell::new(0u8));
+thread_local!(static COUNT_DROPPED: Cell<u8> = Cell::new(0u8));
 
+pub type ObjIdentTy = i32;
+pub type ArgIdentTy = i8;
 
+#[allow(non_camel_case_types)]
+pub type int = i64;
 
-type ObjIdentTy = i32;
-type ArgIdentTy = i8;
-type int = i64;
-
-enum OpCode {
+pub enum OpCode {
     PUSH(ObjIdentTy), // Use number as identifier, needs some translation to generate efficent opcode as well as symbal table
     ADD(ObjIdentTy, ObjIdentTy), // "Add" two objects together
     CALL(ObjIdentTy, String, ArgIdentTy), // Receiver, Method name, and number of arguments
     BIND(ObjIdentTy), // Create a new local variable for fast access
 } 
 
-trait Object {
+pub trait Object {
     fn call(&self, &'static str, Vec<Gc<_Object>>) -> Gc<_Object>;
     fn tyof(&self) -> &'static str;
 }
 
 #[derive(Clone, Trace)]
-enum _Object {
+pub enum _Object {
     Int(Int_ty),
-    // Arr(Box<Array_ty>, Gc<Array>),
+    Arr(Array_ty),
     // Frm(Box<Frame_ty>, Gc<Frame>),
     // Gen(Gc<GenericObj>),
     // Cls(Gc<ClassObj>),
     Non,
 }
 
+///////////////// Dispatch //////////////////
+
+impl Object for _Object {
+    fn call(&self, name : &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        match self {
+            &Int(ref intty) => intty.call(name, args),
+            &Arr(ref arrty) => arrty.call(name, args),
+            &Non => {
+                println!("None object is not cllable");
+                Gc::new(Non)
+            },
+        }
+    }
+
+    fn tyof(&self) -> &'static str {
+        match self {
+            &Int(ref intty) => intty.tyof(),
+            &Arr(ref arrty) => arrty.tyof(),
+            &Non => { "<None>" },
+        }
+    }
+}
 
 ///////////////// Int //////////////////
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, Trace)]
-struct Int_ty {
+pub struct Int_ty {
     _i : int,
 }
 
 impl Int_ty {
-    fn new(i: int) -> Gc<_Object> {
+    pub fn new(i: int) -> Gc<_Object> {
         Gc::new(Int(Int_ty {
             _i : i
         }))
+    }
+
+    pub fn unbox(&self) -> int {
+        self._i
     }
 }
 
@@ -78,46 +104,49 @@ impl Object for Int_ty {
     fn tyof(&self) -> &'static str { "<int>" }
 }
 
-///////////////// Dispatching //////////////////
-impl Object for _Object {
-    fn call(&self, name : &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
-        match self {
-            &Int(ref intty) => intty.call(name, args),
-            &Non => {
-                println!("None object is not cllable");
+
+///////////////// Array //////////////////
+
+#[allow(non_camel_case_types)]
+#[derive(Clone, Trace)]
+pub struct Array_ty {
+    vector : Vec<Gc<_Object>>,
+}
+
+impl Array_ty {
+    pub fn new() -> Gc<_Object> {
+        Gc::new(Arr(Array_ty {
+            vector : Vec::new()
+        }))
+    }
+}
+
+impl Object for Array_ty {
+    fn call(&self, name: &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        match name {
+            "at" =>  {
+                let ref n = *args[0];
+                match n {
+                    &Int(ref intty) => { 
+                        let i = intty._i as usize;
+                        let elem = self.vector[i].clone();
+                        elem
+                    }
+                    o => {
+                        println!("invalid type for indexing: {:?}", o.tyof());
+                        Gc::new(Non)
+                    }
+                }
+            },
+            m => {
+                println!("no such method {:?}", m);
                 Gc::new(Non)
             }
         }
     }
 
-    fn tyof(&self) -> &'static str {
-        match self {
-            &Int(ref intty) => intty.tyof(),
-            &Non => { "<None>" }
-        }
-    }
+    fn tyof(&self) -> &'static str { "<array>" }
 }
-
-
-///////////////// Array //////////////////
-
-// impl Object for Array_ty { // hetero arrays, just an array of typeless boxes
-//     call(self, name, args, dest) {
-//         match name {
-//             "index" => dest = Array::vector[i];
-//             "..." => error "no such methods"
-//         }
-//     }
-
-//     tyof() { "<array> "}
-// }
-
-
-
-// struct Array {
-//     vector :: Vec<Gc<_Object>>
-// }
-
 
 // impl Object for Frame_ty {
 //     call(self /* */)  // Some reflection etc.
@@ -233,6 +262,7 @@ impl Object for _Object {
 
 impl Drop for _Object {
     fn drop(&mut self) {
+        COUNT_DROPPED.with(|count| count.set(count.get() + 1)); 
         println!("Dropping Object");
     }
 }
