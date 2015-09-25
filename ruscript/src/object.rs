@@ -253,16 +253,17 @@ struct Attr_ty {
 #[derive(Trace)]
 pub struct Class_ty {
     name    : String,
-    methods : Box<Vec<Method_ty>>,
-    attrs   : Box<Vec<Attr_ty>>,
+    methods : Gc<Vec<Method_ty>>,
+    attrs   : Gc<Vec<Attr_ty>>,
 }
 
+
 impl Class_ty {
-    fn new(name : &str, ms : Box<Vec<Method_ty>>, attrs : Box<Vec<Attr_ty>>) -> Gc<_Object> {
+    fn new(name : &str, ms : Gc<Vec<Method_ty>>, attrs : Gc<Vec<Attr_ty>>) -> Gc<_Object> {
         Gc::new(_Object::Cls(Class_ty {
             name : name.to_string(),
-            methods : ms,
-            attrs : attrs,
+            methods : ms.clone(),
+            attrs : attrs.clone(),
         }))
     }
 }
@@ -270,6 +271,15 @@ impl Class_ty {
 impl Object for Class_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
+            "__new__" => {
+                let copiedLocals = Vec::new();
+
+                Gc::new(_Object::Its(Instance_ty{
+                    // parent  : 
+                    locals  : Gc::new(copiedLocals),
+                    methods : self.methods.clone(),
+                })) 
+            },
             m => {
                 println!("no such method {:?}", m);
                 Gc::new(Non)
@@ -287,24 +297,30 @@ impl Object for Class_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Instance_ty {
-    parent : Gc<Class_ty>,
-    locals : Box<Vec<Attr_ty>>,
+    // parent  : Box<Class_ty>,
+    locals  : Gc<Vec<Attr_ty>>,
+    methods : Gc<Vec<Method_ty>>,
 }
 
 impl Object for Instance_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
-        match name {
-            m => {
-                println!("no such method {:?}", m);
-                Gc::new(Non)
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {        
+        for m in self.methods.iter() {
+            if m.name == name.to_string() {
+                m.frame.call("__run__", args.clone());
             }
         }
+
+        println!("no such method {:?}", name);
+        Gc::new(Non)
     }
 
     fn tyof(&self) -> &str {
-        &(self.parent.name)
+        "<instance>"
     }
 }
+
+
+// // // // // // // //  MISC // // // // // // // // // 
 
 impl Drop for _Object {
     fn drop(&mut self) {
@@ -312,6 +328,5 @@ impl Drop for _Object {
         println!("Dropping Object");
     }
 }
-
 
 
