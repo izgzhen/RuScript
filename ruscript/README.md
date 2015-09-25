@@ -1,10 +1,9 @@
 RuScript
 ------
 
-Finally things start to converage instead of diverging ... 
+### Goals
+* Object system
+* Stack-based Bytecode
+* Interpreter -- haskell
 
-You might want to clean up the code and write some tests.
 
-And still two stuff:
-
-`Class` and `Generic`

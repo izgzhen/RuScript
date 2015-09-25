@@ -172,12 +172,12 @@ pub struct Frame_ty {
 }
 
 impl Frame_ty {
-    pub fn new(cb : Box<Vec<OpCode>>, globals: Box<Vec<_Object>>) -> Gc<_Object> {
-        Gc::new(_Object::Frm(Frame_ty{
+    pub fn new(cb : Box<Vec<OpCode>>, globals: Box<Vec<_Object>>) -> Gc<Frame_ty> {
+        Gc::new(Frame_ty{
             codeblock : cb,
             globals : globals,
             stack : GcCell::new(Vec::new())
-        }))
+        })
     }
 }
 
@@ -236,9 +236,9 @@ impl Object for Frame_ty {
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
-struct Method_ty {
-    name : String,
-    frame : Gc<Frame_ty>,
+pub struct Method_ty {
+    pub name : String,
+    pub frame : Gc<Frame_ty>,
 }
 
 #[allow(non_camel_case_types)]
@@ -251,12 +251,12 @@ pub struct Class_ty {
 
 
 impl Class_ty {
-    fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>) -> Gc<_Object> {
-        Gc::new(_Object::Cls(Class_ty {
+    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>) -> Gc<Class_ty> {
+        Gc::new(Class_ty {
             name : name.to_string(),
             methods : ms,
             attrs : attrs,
-        }))
+    })
     }
 }
 
@@ -288,7 +288,7 @@ impl Object for Instance_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {        
         for m in self.parent.methods.iter() {
             if m.name == name.to_string() {
-                m.frame.call("__run__", args.clone());
+                return m.frame.call("__run__", args.clone());
             }
         }
 
@@ -302,7 +302,7 @@ impl Object for Instance_ty {
 }
 
 // Used globally = = ||||||
-fn __new__(class : &Gc<Class_ty>) -> Gc<_Object> {
+pub fn __new__(class : &Gc<Class_ty>) -> Gc<_Object> {
     Gc::new(_Object::Its(Instance_ty{
         parent : class.clone(),
         locals : Vec::new(),
@@ -310,7 +310,6 @@ fn __new__(class : &Gc<Class_ty>) -> Gc<_Object> {
 }
 
 
-// // // // // // // //  MISC // // // // // // // // // 
 
 impl Drop for _Object {
     fn drop(&mut self) {

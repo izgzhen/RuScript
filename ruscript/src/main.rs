@@ -16,10 +16,19 @@ fn main() {
         let cb = Box::new(vec![PUSH(0), PUSH(1), ADD, RET]);
         let globals = Box::new(vec![]);
 
-        let frame = Frame_ty::new(cb, globals);
-        let ret = frame.call("__run__", vec![i, j]);
+        let mtd = Method_ty {
+            name  : "adder".to_string(),
+            frame : Frame_ty::new(cb, globals),
+        };
+
+        let cls = Class_ty::new("example", vec![mtd], vec![]);
+
+        let child_obj = __new__(&cls);
+
+        let ret = child_obj.call("adder", vec![i, j]);
+
         match *ret {
-            _Object::Int(ref intty) => { println!("unboxed: {:?}", intty.unbox()); }
+            _Object::Int(ref intty) => { println!("unboxed: {:?}", intty.unbox()); },
             _ => {}
         }
     }
