@@ -7,7 +7,5 @@
 extern crate gc;
 
 pub mod object;
-pub mod ast;
-pub mod interpreter;
+// pub mod interpreter;
 
-pub use ast::*;

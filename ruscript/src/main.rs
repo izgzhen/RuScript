@@ -6,7 +6,6 @@ extern crate gc;
 
 use std::collections::HashMap;
 use ruscript::object::*;
-use ruscript::interpreter::*;
 use gc::*;
 
 fn main() {
