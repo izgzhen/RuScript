@@ -241,29 +241,21 @@ struct Method_ty {
     frame : Gc<Frame_ty>,
 }
 
-
-#[allow(non_camel_case_types)]
-#[derive(Trace)]
-struct Attr_ty {
-    name : String,
-    data : Gc<_Object>,
-}
-
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Class_ty {
     name    : String,
-    methods : Gc<Vec<Method_ty>>,
-    attrs   : Gc<Vec<Attr_ty>>,
+    methods : Vec<Method_ty>,
+    attrs   : Vec<String>,
 }
 
 
 impl Class_ty {
-    fn new(name : &str, ms : Gc<Vec<Method_ty>>, attrs : Gc<Vec<Attr_ty>>) -> Gc<_Object> {
+    fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>) -> Gc<_Object> {
         Gc::new(_Object::Cls(Class_ty {
             name : name.to_string(),
-            methods : ms.clone(),
-            attrs : attrs.clone(),
+            methods : ms,
+            attrs : attrs,
         }))
     }
 }
@@ -271,15 +263,6 @@ impl Class_ty {
 impl Object for Class_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
-            "__new__" => {
-                let copiedLocals = Vec::new();
-
-                Gc::new(_Object::Its(Instance_ty{
-                    // parent  : 
-                    locals  : Gc::new(copiedLocals),
-                    methods : self.methods.clone(),
-                })) 
-            },
             m => {
                 println!("no such method {:?}", m);
                 Gc::new(Non)
@@ -296,15 +279,14 @@ impl Object for Class_ty {
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
-pub struct Instance_ty {
-    // parent  : Box<Class_ty>,
-    locals  : Gc<Vec<Attr_ty>>,
-    methods : Gc<Vec<Method_ty>>,
+pub struct Instance_ty{
+    parent  : Gc<Class_ty>,
+    locals  : Vec<Gc<_Object>>,
 }
 
 impl Object for Instance_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {        
-        for m in self.methods.iter() {
+        for m in self.parent.methods.iter() {
             if m.name == name.to_string() {
                 m.frame.call("__run__", args.clone());
             }
@@ -317,6 +299,14 @@ impl Object for Instance_ty {
     fn tyof(&self) -> &str {
         "<instance>"
     }
+}
+
+// Used globally = = ||||||
+fn __new__(class : &Gc<Class_ty>) -> Gc<_Object> {
+    Gc::new(_Object::Its(Instance_ty{
+        parent : class.clone(),
+        locals : Vec::new(),
+    }))
 }
 
 
