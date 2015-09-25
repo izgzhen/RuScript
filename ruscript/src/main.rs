@@ -5,8 +5,12 @@ extern crate ruscript;
 extern crate gc;
 
 use ruscript::object::*;
+use ruscript::primty::*;
+use ruscript::framety::*;
+use ruscript::classty::*;
 use gc::*;
-use ruscript::object::OpCode::*;
+use ruscript::stackcode::SCode::*;
+use ruscript::Object;
 
 fn main() {
     {
