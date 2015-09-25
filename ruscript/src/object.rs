@@ -167,12 +167,12 @@ impl Object for Array_ty {
 #[derive(Trace)]
 pub struct Frame_ty {
     codeblock : Box<Vec<OpCode>>,
-    globals   : Box<Vec<_Object>>,
+    globals   : Box<Vec<Gc<_Object>>>,
     stack     : GcCell<Vec<Gc<_Object>>>,
 }
 
 impl Frame_ty {
-    pub fn new(cb : Box<Vec<OpCode>>, globals: Box<Vec<_Object>>) -> Gc<Frame_ty> {
+    pub fn new(cb : Box<Vec<OpCode>>, globals: Box<Vec<Gc<_Object>>>) -> Gc<Frame_ty> {
         Gc::new(Frame_ty{
             codeblock : cb,
             globals : globals,
@@ -261,6 +261,7 @@ impl Class_ty {
 }
 
 impl Object for Class_ty {
+    #[allow(unused_variables)]
     fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             m => {
