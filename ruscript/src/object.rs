@@ -32,8 +32,8 @@ pub enum _Object {
     Int(Int_ty),
     Arr(Array_ty),
     Frm(Frame_ty),
-    // Gen(Gc<GenericObj>),
-    // Cls(Gc<ClassObj>),
+    Its(Instance_ty),
+    Cls(Class_ty),
     Non,
 }
 
@@ -45,6 +45,8 @@ impl Object for _Object {
             &Int(ref intty) => intty.call(name, args),
             &Arr(ref arrty) => arrty.call(name, args),
             &Frm(ref frmty) => frmty.call(name, args),
+            &Cls(ref clsty) => clsty.call(name, args),
+            &Its(ref itsty) => itsty.call(name, args),
             &Non => {
                 println!("None object is not cllable");
                 Gc::new(Non)
@@ -57,6 +59,8 @@ impl Object for _Object {
             &Int(ref intty) => intty.tyof(),
             &Arr(ref arrty) => arrty.tyof(),
             &Frm(ref frmty) => frmty.tyof(),
+            &Cls(ref clsty) => clsty.tyof(),
+            &Its(ref itsty) => itsty.tyof(),
             &Non => { "<None>" },
         }
     }
@@ -228,59 +232,79 @@ impl Object for Frame_ty {
 }
 
 
+///////////////// Class //////////////////
 
-// struct Class {
-//     name,
-//     Map<string, opcode> // methods
-//     Map<string, _Object> // attributes
-// }
-
-// impl Class {
-//     fn instantiate() -> GenericObj
-// }
-
-// impl Object for Class {
-//     fn call(self, name, args, dest) {
-//         let frame = Frame::new(self.methods[name]);
-//         frame.locals.add(args);
-//         frame.locals.add(self.attributes);
-//         frame.execute();
-//         dest = box frame.ret.copy();
-//     }
-
-//     fn tyof() { "<class>" }
-// }
-
-// struct GenericObj {
-//     box class, // parent
-//     self = Map<string, _Object> // local storage
-// }
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+struct Method_ty {
+    name : String,
+    frame : Gc<Frame_ty>,
+}
 
 
-// impl GenericObj for Object {
-//     fn call (self, name, args, dest) {
-//         let frame = Frame::new(self.class.methods[name]);
-//         frame.locals.add(args);
-//         frame.locals.add(self.attributes);
-//         frame.execute();
-//         dest = box frame.ret.copy();
-//     }
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+struct Attr_ty {
+    name : String,
+    data : Gc<_Object>,
+}
 
-//     fn tyof() { "<class:" + self.class.name + ">"}
-// }
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+pub struct Class_ty {
+    name    : String,
+    methods : Box<Vec<Method_ty>>,
+    attrs   : Box<Vec<Attr_ty>>,
+}
+
+impl Class_ty {
+    fn new(name : &str, ms : Box<Vec<Method_ty>>, attrs : Box<Vec<Attr_ty>>) -> Gc<_Object> {
+        Gc::new(_Object::Cls(Class_ty {
+            name : name.to_string(),
+            methods : ms,
+            attrs : attrs,
+        }))
+    }
+}
+
+impl Object for Class_ty {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        match name {
+            m => {
+                println!("no such method {:?}", m);
+                Gc::new(Non)
+            }
+        }
+    }
+
+    fn tyof(&self) -> &str { "<class>" }
+}
 
 
-// fn interprete(opcode){
-//     let frameObj = Frame::new(opcode);
-//     frameObj.execute()
-// }
+///////////////// Instance //////////////////
 
 
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+pub struct Instance_ty {
+    parent : Gc<Class_ty>,
+    locals : Box<Vec<Attr_ty>>,
+}
 
-// fn interpreteByte() -> Vec<OpCode> {
-//     // ... some serailization ...
-// }
+impl Object for Instance_ty {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        match name {
+            m => {
+                println!("no such method {:?}", m);
+                Gc::new(Non)
+            }
+        }
+    }
 
+    fn tyof(&self) -> &str {
+        &(self.parent.name)
+    }
+}
 
 impl Drop for _Object {
     fn drop(&mut self) {
