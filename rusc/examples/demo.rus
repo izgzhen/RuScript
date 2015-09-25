@@ -1,0 +1,24 @@
+# Demo of RuScript
+
+a = 1;
+b = 2;
+
+class example {
+    fn adder(x, y) {
+        x + y
+    }
+}
+
+obj = example()
+
+class example2 {
+    fn bridge(x, y) {
+        global obj;
+        obj(x, y)
+    }
+}
+
+obj2 = example2()
+
+c = obj2.bridge(a, b) # c should be 3
+
