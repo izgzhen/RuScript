@@ -1,0 +1,10 @@
+# Demo of RuScript
+
+a = 1
+b = a
+c = a + b
+
+fn add(x, y) {
+    x + y
+}
+

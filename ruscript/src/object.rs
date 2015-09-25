@@ -10,53 +10,173 @@ use std::cell::Cell;
 thread_local!(static COUNTER: Cell<u8> = Cell::new(0u8));
 
 
-#[derive(Debug, Clone, Trace)]
-pub enum PrimitiveType {
-    PrimInt(i32),
+
+
+trait Object {
+    call(name, args, dest)
+    new
+    typeof
 }
 
-impl Add<PrimitiveType> for PrimitiveType {
-    type Output = PrimitiveType;
-    fn add(self, other: PrimitiveType) -> PrimitiveType {
-        match self {
-            PrimInt(i) => {
-                match other {
-                    PrimInt(j) => PrimInt(i + j)
-                }
-            }
+impl Object for Int_ty { // Primitive
+    call(self, name, args, dest) {
+        // sometemplat requires format of args
+        match name {
+            "add" => dest = box (self + obj_to_int!(args[0])); // Just add, release the old and apply for a new
+            "..." => error "no such methods" // Can be done in macro as well?
         }
+    }
+
+    new(int i) {
+        box i
+    }
+
+    typeof() {
+        "<int>"
     }
 }
 
+impl Object for Array_ty { // hetero arrays, just an array of typeless boxes
+    call(self, name, args, dest) {
+        match name {
+            "index" => dest = Array::vector[i];
+            "..." => error "no such methods"
+        }
+    }
 
-fn call_builtin(prim : &PrimitiveType, name : &str, params : &HashMap<&str, & mut Object>) -> Option<Object>{
-    unimplemented!()
+    new() {
+        box empty_array
+    }
+
+    typeof() { "<array> "}
 }
 
-#[derive(Trace)]
-pub struct Function {
-    pub arguments : Vec<String>,
-    pub body : Vec<Statement>,
+
+
+struct Array {
+    vector :: Vec<Gc<_Object>>
 }
 
-pub struct Template {
-    pub name : String,
-    pub methods : HashMap<String, Function>,
+enum _Object {
+    Int(Int_ty, i32),
+    Arr(Array_ty, Box<Array>),
+    // ... and more
+    Frm(Frame_ty, Box<Frame>)
 }
 
-#[derive(Trace)]
-pub struct Complex {
-    #[unsafe_ignore_trace]
-    pub template : Box<Template>,
-    pub attributes : Vec<Box<Object>>,
+
+impl Object for Frame_ty {
+    call(self /* */)  // Some reflection etc.
+
+    new(Frame) //
+
+
+
 }
 
-#[derive(Trace)]
-pub enum Object {
-    PrimObj(PrimitiveType),
-    FuncObj(Function),
-    CompObj(Complex),
+
+struct Frame {
+    box code_obj, // stack code
+    box last_frame,
+    box locals // Map<string, PyObj>,
+    box globals
+    box stack
+    box ret
 }
+
+
+
+
+impl Frame {
+    execute {
+        loop {
+            next_code = code_obj.next()
+            if next_code == None: break;
+            else  match next_code {
+                PUSH(x) -> stack.push(locals[x]),
+                ADD(x, y) -> {
+                    let a = locals[x]
+                    let b = locals[y]
+                    let c = None
+                    a.call("add", [b], c)
+                    stack.push(c)
+                },
+                Bind(name) -> {
+                    locals.push_back(name, stack.top())
+                },
+                Call(obj_name, method_name, i) -> {
+                    match globals.lookup(obj_name) {
+                        Some(obj) -> {
+                            let args = []
+                            while(i--){
+                                args.push_back(i)
+                            }
+                            let mut ret;
+                            obj.call(method_name. args, ret);
+                            push_back(ret);
+                        }
+                    }
+                }
+                // ...
+            }
+        }
+    }
+
+}
+
+struct Class {
+    name,
+    Map<string, opcode> // methods
+    Map<string, _Object> // attributes
+}
+
+impl Class {
+    fn instantiate() -> GenericObj
+}
+
+struct GenericObj {
+    box class, // parent
+    self = Map<string, _Object> // local storage
+}
+
+
+impl GenericObj for Object {
+    fn call (self, name, args, dest) {
+        let frame = Frame::new(self.class.methods[name]);
+        frame.locals.add(args);
+        frame.locals.add(self.attributes)
+        frame.execute()
+        dest = box frame.ret.copy()
+    }
+
+    fn new(class) {
+        class.instantiate()
+    }
+
+    fn typeof() { "<class:" + self.class.name + ">"}
+}
+
+
+fn interprete(opcode){
+    let frameObj = Frame::new(opcode);
+    frameObj.execute()
+
+}
+
+enum OpCode {
+    PUSH()
+    Call()
+    Bind()
+    ADD()
+}
+
+
+fn interpreteByte(byte) -> Vec<OpCode> {
+    // ... some serailization ...
+}
+
+
+
 
 impl Drop for Object {
     fn drop(&mut self) {
@@ -64,27 +184,5 @@ impl Drop for Object {
     }
 }
 
-trait Entity {
-    fn call<'a>(&'a self, Option<&str>, &HashMap<&str, &'a mut Object>) -> Option<Object>;
-}
-
-impl Entity for PrimitiveType {
-    fn call<'a>(&'a self, target : Option<&str>, params : &HashMap<&str, &'a mut Object>) -> Option<Object> {
-        match target {
-            Some(name) => {
-                call_builtin(&self, name, params)
-            },
-            None => {
-                match self {
-                    &PrimitiveType::PrimInt(i) => Some(Object::PrimObj(PrimitiveType::PrimInt(i))),
-                }
-            },
-        }
-    }
-}
 
 
-
-pub struct Environment<'a> {
-    pub objects : &'a mut HashMap<String, Gc<Object>>,
-}
