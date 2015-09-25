@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use gc::*;
 
 use self::_Object::*;
@@ -19,21 +17,21 @@ pub type int = i64;
 #[derive(Trace)]
 pub enum OpCode {
     PUSH(ObjIdentTy), // Use number as identifier, needs some translation to generate efficent opcode as well as symbal table
-    ADD(ObjIdentTy, ObjIdentTy), // "Add" two objects together
+    ADD, // "Add" two objects together
     CALL(ObjIdentTy, String, ArgIdentTy), // Receiver, Method name, and number of arguments
-    BIND(ObjIdentTy), // Create a new local variable for fast access
+    RET // return the stack top
 } 
 
 pub trait Object {
-    fn call(&self, &'static str, Vec<Gc<_Object>>) -> Gc<_Object>;
-    fn tyof(&self) -> &'static str;
+    fn call(&self, &str, Vec<Gc<_Object>>) -> Gc<_Object>;
+    fn tyof(&self) -> &str;
 }
 
 #[derive(Trace)]
 pub enum _Object {
     Int(Int_ty),
     Arr(Array_ty),
-    // Frm(Box<Frame_ty>, Gc<Frame>),
+    Frm(Frame_ty),
     // Gen(Gc<GenericObj>),
     // Cls(Gc<ClassObj>),
     Non,
@@ -42,10 +40,11 @@ pub enum _Object {
 ///////////////// Dispatch //////////////////
 
 impl Object for _Object {
-    fn call(&self, name : &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match self {
             &Int(ref intty) => intty.call(name, args),
             &Arr(ref arrty) => arrty.call(name, args),
+            &Frm(ref frmty) => frmty.call(name, args),
             &Non => {
                 println!("None object is not cllable");
                 Gc::new(Non)
@@ -53,10 +52,11 @@ impl Object for _Object {
         }
     }
 
-    fn tyof(&self) -> &'static str {
+    fn tyof(&self) -> &str {
         match self {
             &Int(ref intty) => intty.tyof(),
             &Arr(ref arrty) => arrty.tyof(),
+            &Frm(ref frmty) => frmty.tyof(),
             &Non => { "<None>" },
         }
     }
@@ -84,7 +84,7 @@ impl Int_ty {
 
 
 impl Object for Int_ty {
-    fn call(&self, name : &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "add" => {
                 let ref b = *args[0];
@@ -103,7 +103,7 @@ impl Object for Int_ty {
         }
     }
 
-    fn tyof(&self) -> &'static str { "<int>" }
+    fn tyof(&self) -> &str { "<int>" }
 }
 
 
@@ -124,7 +124,7 @@ impl Array_ty {
 }
 
 impl Object for Array_ty {
-    fn call(&self, name: &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "at" =>  {
                 let ref n = *args[0];
@@ -154,40 +154,68 @@ impl Object for Array_ty {
         }
     }
 
-    fn tyof(&self) -> &'static str { "<array>" }
+    fn tyof(&self) -> &str { "<array>" }
 }
 
 ///////////////// Frame //////////////////
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
-struct Frame_ty {
-    #[unsafe_ignore_trace]
-    codeblock    : GcCell<Vec<OpCode>>, // Vec<OpCode>,
-    // locals  : GcCell<Vec<Gc<_Object>>>,
-    #[unsafe_ignore_trace]
-    globals : Option<HashMap<ObjIdentTy, _Object>>,
+pub struct Frame_ty {
+    codeblock : Box<Vec<OpCode>>,
+    globals   : Box<Vec<_Object>>,
+    stack     : GcCell<Vec<Gc<_Object>>>,
+}
 
-    stack   : GcCell<Vec<Gc<_Object>>>,
+impl Frame_ty {
+    pub fn new(cb : Box<Vec<OpCode>>, globals: Box<Vec<_Object>>) -> Gc<_Object> {
+        Gc::new(_Object::Frm(Frame_ty{
+            codeblock : cb,
+            globals : globals,
+            stack : GcCell::new(Vec::new())
+        }))
+    }
 }
 
 impl Object for Frame_ty {
-    fn call(&self, name: &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "__run__" => {
-                let mut ret = Non;
-
-                for i in 0..self.codeblock.borrow().len() {
-                    let ref inst = self.codeblock.borrow()[i];
+                for i in 0..self.codeblock.len() {
+                    // let ref inst = self.codeblock.borrow()[i];
+                    let ref inst = self.codeblock[i];
                     match inst {
                         &PUSH(x) => {
                             self.stack.borrow_mut().push(args[x as usize].clone());
                         },
-                        _ => {},
+                        &ADD => {
+                            let a = self.stack.borrow_mut().pop().unwrap();
+                            let b = self.stack.borrow_mut().pop().unwrap();
+                            let sum = a.call("add", vec![b]);
+                            self.stack.borrow_mut().push(sum);
+                        },
+                        &CALL(recv, ref method, narg) => {
+                            let ref obj = self.globals[recv as usize];
+
+                            let mut params = Vec::new();
+
+                            for _ in 0..narg {
+                                let x = self.stack.borrow_mut().pop().unwrap();
+                                params.push(x.clone());
+                            }
+                            return obj.call(method, params);
+                        },
+                        &RET => {
+                            let x = self.stack.borrow_mut().pop().unwrap();
+                            return x;
+                        }
+                        // _ => {
+                        //     println!("unknown instruction");
+                        // }
                     }
                 }
 
-                Gc::new(ret)
+                Gc::new(Non)
             },
             m => {
                 println!("no such method {:?}", m);
@@ -196,7 +224,7 @@ impl Object for Frame_ty {
         }
     }
 
-    fn tyof(&self) -> &'static str { "<frame>" }
+    fn tyof(&self) -> &str { "<frame>" }
 }
 
 
