@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use gc::*;
 
 use self::_Object::*;
+use self::OpCode::*;
 
 // used for profiling
 use std::cell::Cell;
@@ -14,6 +15,8 @@ pub type ArgIdentTy = i8;
 #[allow(non_camel_case_types)]
 pub type int = i64;
 
+
+#[derive(Trace)]
 pub enum OpCode {
     PUSH(ObjIdentTy), // Use number as identifier, needs some translation to generate efficent opcode as well as symbal table
     ADD(ObjIdentTy, ObjIdentTy), // "Add" two objects together
@@ -143,7 +146,7 @@ impl Object for Array_ty {
                 }
 
                 Gc::new(Non)
-            }
+            },
             m => {
                 println!("no such method {:?}", m);
                 Gc::new(Non)
@@ -154,64 +157,49 @@ impl Object for Array_ty {
     fn tyof(&self) -> &'static str { "<array>" }
 }
 
-// impl Object for Frame_ty {
-//     call(self /* */)  // Some reflection etc.
+///////////////// Frame //////////////////
 
-//     new(Frame) //
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+struct Frame_ty {
+    #[unsafe_ignore_trace]
+    codeblock    : GcCell<Vec<OpCode>>, // Vec<OpCode>,
+    // locals  : GcCell<Vec<Gc<_Object>>>,
+    #[unsafe_ignore_trace]
+    globals : Option<HashMap<ObjIdentTy, _Object>>,
+
+    stack   : GcCell<Vec<Gc<_Object>>>,
+}
+
+impl Object for Frame_ty {
+    fn call(&self, name: &'static str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        match name {
+            "__run__" => {
+                let mut ret = Non;
+
+                for i in 0..self.codeblock.borrow().len() {
+                    let ref inst = self.codeblock.borrow()[i];
+                    match inst {
+                        &PUSH(x) => {
+                            self.stack.borrow_mut().push(args[x as usize].clone());
+                        },
+                        _ => {},
+                    }
+                }
+
+                Gc::new(ret)
+            },
+            m => {
+                println!("no such method {:?}", m);
+                Gc::new(Non)
+            }
+        }
+    }
+
+    fn tyof(&self) -> &'static str { "<frame>" }
+}
 
 
-
-// }
-
-
-// struct Frame {
-//     box code_obj, // stack code
-//     box last_frame,
-//     box locals // Map<string, PyObj>,
-//     box globals
-//     box stack
-//     box ret
-// }
-
-
-
-
-// impl Frame {
-//     execute {
-//         loop {
-//             next_code = code_obj.next()
-//             if next_code == None: break;
-//             else  match next_code {
-//                 PUSH(x) -> stack.push(locals[x]),
-//                 ADD(x, y) -> {
-//                     let a = locals[x]
-//                     let b = locals[y]
-//                     let c = None
-//                     a.call("add", [b], c)
-//                     stack.push(c)
-//                 },
-//                 BIND(name) -> {
-//                     locals.push_back(name, stack.top())
-//                 },
-//                 CALL(obj_name, method_name, i) -> {
-//                     match globals.lookup(obj_name) {
-//                         Some(obj) -> {
-//                             let args = []
-//                             while(i--){
-//                                 args.push_back(i)
-//                             }
-//                             let mut ret;
-//                             obj.call(method_name. args, ret);
-//                             push_back(ret);
-//                         }
-//                     }
-//                 }
-//                 // ...
-//             }
-//         }
-//     }
-
-// }
 
 // struct Class {
 //     name,
