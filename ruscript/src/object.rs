@@ -26,7 +26,7 @@ pub trait Object {
     fn tyof(&self) -> &'static str;
 }
 
-#[derive(Clone, Trace)]
+#[derive(Trace)]
 pub enum _Object {
     Int(Int_ty),
     Arr(Array_ty),
@@ -62,7 +62,7 @@ impl Object for _Object {
 ///////////////// Int //////////////////
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Trace)]
+#[derive(Trace)]
 pub struct Int_ty {
     _i : int,
 }
@@ -91,8 +91,7 @@ impl Object for Int_ty {
                         println!("invalid type for add: {:?}", o.tyof());
                         Gc::new(Non)
                     }
-                }
-               
+                } 
             },
             m => {
                 println!("no such method {:?}", m);
@@ -108,15 +107,15 @@ impl Object for Int_ty {
 ///////////////// Array //////////////////
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Trace)]
+#[derive(Trace)]
 pub struct Array_ty {
-    vector : Vec<Gc<_Object>>,
+    vector : GcCell<Vec<Gc<_Object>>>,
 }
 
 impl Array_ty {
     pub fn new() -> Gc<_Object> {
         Gc::new(Arr(Array_ty {
-            vector : Vec::new()
+            vector : GcCell::new(Vec::with_capacity(100))
         }))
     }
 }
@@ -129,7 +128,7 @@ impl Object for Array_ty {
                 match n {
                     &Int(ref intty) => { 
                         let i = intty._i as usize;
-                        let elem = self.vector[i].clone();
+                        let elem = self.vector.borrow()[i].clone();
                         elem
                     }
                     o => {
@@ -138,6 +137,13 @@ impl Object for Array_ty {
                     }
                 }
             },
+            "push" => {
+                for arg in args {
+                    self.vector.borrow_mut().push(arg.clone());
+                }
+
+                Gc::new(Non)
+            }
             m => {
                 println!("no such method {:?}", m);
                 Gc::new(Non)
