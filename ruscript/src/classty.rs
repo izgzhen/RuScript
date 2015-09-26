@@ -3,6 +3,7 @@ use framety::*;
 use super::*;
 use super::object::*;
 use super::object::_Object::*;
+use super::stackcode::*;
 
 ///////////////// Class //////////////////
 
@@ -23,12 +24,12 @@ pub struct Class_ty {
 
 
 impl Class_ty {
-    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>) -> Gc<Class_ty> {
-        Gc::new(Class_ty {
+    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>, env: &mut Env) {
+        env.classes.push(Gc::new(Class_ty {
             name : name.to_string(),
             methods : ms,
             attrs : attrs,
-    })
+        }));
     }
 }
 
@@ -53,6 +54,7 @@ impl Object for Class_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Instance_ty{
+    // env     : Gc<Env>,
     parent  : Gc<Class_ty>,
     locals  : Vec<Gc<_Object>>,
 }
@@ -74,11 +76,31 @@ impl Object for Instance_ty {
     }
 }
 
-// Used globally = = ||||||
-pub fn __new__(class : &Gc<Class_ty>) -> Gc<_Object> {
+pub fn __new__(class : Gc<Class_ty>, env: Gc<Env>) -> Gc<_Object> {
     Gc::new(_Object::Its(Instance_ty{
+        // env    : env.clone(),
         parent : class.clone(),
         locals : Vec::new(),
     }))
 }
 
+// Environment
+#[derive(Trace)]
+pub struct Env {
+    pub classes : Vec<Gc<Class_ty>>,
+    pub globals : Vec<Gc<_Object>>,
+}
+
+impl Env {
+    pub fn __new__(&self, x : usize) -> Gc<_Object> {
+        Gc::new(_Object::Its(Instance_ty{
+            // env    : env.clone(),
+            parent : self.classes[x].clone(),
+            locals : Vec::new(),
+        }))
+    }
+}
+
+fn __classDecl__(env: &mut Env, code: &Vec<SCode>, n_attrs: usize, n_methods: usize) {
+    
+}

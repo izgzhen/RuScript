@@ -38,6 +38,10 @@ impl Object for Int_ty {
                     }
                 } 
             },
+            "__print__" => {
+                print!("{}", self._i);
+                Gc::new(Non)
+            },
             m => {
                 println!("no such method {:?}", m);
                 Gc::new(Non)
@@ -97,4 +101,29 @@ impl Object for Array_ty {
     }
 
     fn tyof(&self) -> &str { "<array>" }
+}
+
+
+///////////////// String //////////////////
+#[allow(non_camel_case_types)]
+#[derive(Trace)]
+pub struct String_ty {
+    string : Box<String>,
+}
+
+impl String_ty {
+    pub fn new(s: Box<String>) -> Gc<_Object> {
+        Gc::new(_Object::Str(String_ty{
+            string : s
+        }))
+    }
+}
+
+impl Object for String_ty {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+        println!("no such method {:?}", name);
+        Gc::new(Non)
+    }
+
+    fn tyof(&self) -> &str { "<string>" }
 }

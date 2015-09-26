@@ -13,6 +13,7 @@ thread_local!(static COUNT_DROPPED: Cell<u8> = Cell::new(0u8));
 pub enum _Object {
     Int(Int_ty),
     Arr(Array_ty),
+    Str(String_ty),
     Frm(Frame_ty),
     Its(Instance_ty),
     Cls(Class_ty),
@@ -24,6 +25,7 @@ impl Object for _Object {
         match self {
             &Int(ref intty) => intty.call(name, args),
             &Arr(ref arrty) => arrty.call(name, args),
+            &Str(ref strty) => strty.call(name, args),
             &Frm(ref frmty) => frmty.call(name, args),
             &Cls(ref clsty) => clsty.call(name, args),
             &Its(ref itsty) => itsty.call(name, args),
@@ -38,6 +40,7 @@ impl Object for _Object {
         match self {
             &Int(ref intty) => intty.tyof(),
             &Arr(ref arrty) => arrty.tyof(),
+            &Str(ref strty) => strty.tyof(),
             &Frm(ref frmty) => frmty.tyof(),
             &Cls(ref clsty) => clsty.tyof(),
             &Its(ref itsty) => itsty.tyof(),
