@@ -1,5 +1,9 @@
 module Compiler where
 
+import Parser
+import Control.Monad.RWS
+import Control.Monad.Except
+
 -- Bytecode compiler for ruscript language
 
 data SCode = SPush Int
@@ -14,8 +18,12 @@ data SCode = SPush Int
            | SClass Int Int
            deriving (Show, Eq)
 
-serialize :: [SCode] -> ByteString
+type Config = ()
+type State = ()
 
-compile :: Source -> Except String [SCode]
+type Compiler = ExceptT String (RWS Config [SCode] State)
+
+compile :: Source -> Compiler ()
 compile = undefined
+
 
