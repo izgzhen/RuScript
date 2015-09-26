@@ -108,11 +108,11 @@ impl Object for Array_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct String_ty {
-    string : Box<String>,
+    string : Gc<String>,
 }
 
 impl String_ty {
-    pub fn new(s: Box<String>) -> Gc<_Object> {
+    pub fn new(s: Gc<String>) -> Gc<_Object> {
         Gc::new(_Object::Str(String_ty{
             string : s
         }))

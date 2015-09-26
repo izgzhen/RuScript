@@ -4,6 +4,7 @@ use super::*;
 use super::object::*;
 use super::object::_Object::*;
 use super::stackcode::*;
+use super::stackcode::SCode::*;
 
 ///////////////// Class //////////////////
 
@@ -101,6 +102,31 @@ impl Env {
     }
 }
 
-fn __classDecl__(env: &mut Env, code: &Vec<SCode>, n_attrs: usize, n_methods: usize) {
-    
+fn __class_decl__(env: &mut Env, code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: usize) -> usize {
+    let mut pc : usize = start;
+    let mut attrs = Vec::new();
+
+    while true {
+        match code[pc] {
+            PUSH_STR(ref s) => {
+                attrs.push(s.clone());
+                pc = pc + 1;
+            },
+            _ => break
+        }
+    }
+
+    let mut cb = Vec::new();
+    let mut flag = false;
+
+    while true {
+        match code[pc] {
+            FRMEND => break,
+            _ => {
+                cb.push(code[pc].clone());
+            }
+        }
+    }
+
+    pc
 }
