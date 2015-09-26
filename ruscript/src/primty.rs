@@ -3,6 +3,7 @@ use gc::*;
 use super::*;
 use super::object::*;
 use super::object::_Object::*;
+use super::classty::*;
 
 ///////////////// Int //////////////////
 
@@ -26,7 +27,7 @@ impl Int_ty {
 
 
 impl Object for Int_ty {
-    fn call(&self, name : &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>, env : &Gc<Env>) -> Gc<_Object> {
         match name {
             "add" => {
                 let ref b = *args[0];
@@ -70,7 +71,7 @@ impl Array_ty {
 }
 
 impl Object for Array_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>) -> Gc<_Object> {
         match name {
             "at" =>  {
                 let ref n = *args[0];
@@ -120,7 +121,7 @@ impl String_ty {
 }
 
 impl Object for String_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>) -> Gc<_Object> {
         println!("no such method {:?}", name);
         Gc::new(Non)
     }

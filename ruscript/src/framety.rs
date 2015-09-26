@@ -28,7 +28,7 @@ impl Frame_ty {
 }
 
 impl Object for Frame_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>) -> Gc<_Object> {
         match name {
             "__run__" => {
                 for i in 0..self.codeblock.len() {
@@ -41,7 +41,7 @@ impl Object for Frame_ty {
                         &ADD => {
                             let a = self.stack.borrow_mut().pop().unwrap();
                             let b = self.stack.borrow_mut().pop().unwrap();
-                            let sum = a.call("add", vec![b]);
+                            let sum = a.call("add", vec![b], env);
                             self.stack.borrow_mut().push(sum);
                         },
                         &CALL(recv, ref method, narg) => {
@@ -53,7 +53,7 @@ impl Object for Frame_ty {
                                 let x = self.stack.borrow_mut().pop().unwrap();
                                 params.push(x.clone());
                             }
-                            return obj.call(method, params);
+                            return obj.call(method, params, env);
                         },
                         &RET => {
                             let x = self.stack.borrow_mut().pop().unwrap();
@@ -73,7 +73,7 @@ impl Object for Frame_ty {
                         },
                         &PRINT => {
                             let x = self.stack.borrow_mut().pop().unwrap();
-                            x.call("__print__", vec![]);
+                            x.call("__print__", vec![], env);
                         },
                         &PUSHG(x) => {
                             self.stack.borrow_mut().push(self.env.globals[x as usize].clone());

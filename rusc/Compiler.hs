@@ -23,11 +23,8 @@ data SCode = SPushG Int
            | SNew Int
            | SPushInt Int
            | SPushStr String
-           | SFrameStart
-           | SFrameEnd Int
+           | SFrameEnd
            | SClass Int Int
-           | SPopG Int -- Pop the stack top to the globals[i]
-           | SPopL Int -- Pop the stack top to the locals[i]
            | SPrint    -- Print the element on stack top
            deriving (Show, Eq)
 
@@ -99,9 +96,8 @@ emitMethod (MethodDecl name args glbs src) = do
   enterMethod $ do
     addVisibleGlobals glbs
     mapM_ (\x -> withNextId $ \id -> addLocal x id) args
-    emit SFrameStart
     compile src
-  emit $ SFrameEnd (length args)
+  emit $ SFrameEnd
   emit $ SPushStr name
 
 ifInMethod :: Compiler () -> Compiler ()

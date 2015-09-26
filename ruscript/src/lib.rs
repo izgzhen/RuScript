@@ -18,12 +18,8 @@ pub type int = i64;
 pub mod object;
 use object::*;
 
-pub trait Object {
-    fn call(&self, &str, Vec<Gc<_Object>>) -> Gc<_Object>;
-    fn tyof(&self) -> &str;
-}
-
 pub mod stackcode;
+
 pub mod classty;
 pub mod framety;
 pub mod primty;

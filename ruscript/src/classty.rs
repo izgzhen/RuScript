@@ -6,37 +6,41 @@ use super::object::_Object::*;
 use super::stackcode::*;
 use super::stackcode::SCode::*;
 
+use std::cell::*;
+
 ///////////////// Class //////////////////
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Method_ty {
-    pub name : String,
-    pub frame : Gc<Frame_ty>,
+    pub _name : Gc<String>,
+    pub _code : Vec<SCode>,
 }
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Class_ty {
-    name    : String,
+    name    : Gc<String>,
     methods : Vec<Method_ty>,
     attrs   : Vec<String>,
 }
 
 
 impl Class_ty {
-    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>, env: &mut Env) {
-        env.classes.push(Gc::new(Class_ty {
-            name : name.to_string(),
-            methods : ms,
-            attrs : attrs,
-        }));
+    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>, env : &mut Env) {
+        unsafe {
+            env.classes.push(Gc::new(Class_ty {
+                name : Gc::new(name.to_string()),
+                methods : ms,
+                attrs : attrs,
+            }));
+        }
     }
 }
 
 impl Object for Class_ty {
     #[allow(unused_variables)]
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {
         match name {
             m => {
                 println!("no such method {:?}", m);
@@ -61,10 +65,11 @@ pub struct Instance_ty{
 }
 
 impl Object for Instance_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {        
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {        
         for m in self.parent.methods.iter() {
-            if m.name == name.to_string() {
-                return m.frame.call("__run__", args.clone());
+            if (*m._name) == name.to_string() {
+                let frame = Frame_ty::new(Box::new(m._code.clone()), env);
+                return frame.call("__run__", args.clone(), env);
             }
         }
 
@@ -102,11 +107,13 @@ impl Env {
     }
 }
 
-fn __class_decl__(env: &mut Env, code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: usize) -> usize {
+    
+fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: usize) -> usize {
     let mut pc : usize = start;
     let mut attrs = Vec::new();
+    let mut methods = Vec::new();
 
-    while true {
+    for _ in 0..n_attrs {
         match code[pc] {
             PUSH_STR(ref s) => {
                 attrs.push(s.clone());
@@ -116,17 +123,47 @@ fn __class_decl__(env: &mut Env, code: &Vec<SCode>, n_attrs: usize, n_methods: u
         }
     }
 
+    pc = pc + 1;
+
+
     let mut cb = Vec::new();
     let mut flag = false;
 
-    while true {
-        match code[pc] {
-            FRMEND => break,
-            _ => {
-                cb.push(code[pc].clone());
+    for _ in 0..n_methods {
+
+        while true {
+            match code[pc] {
+                FRMEND => break,
+                _ => {
+                    cb.push(code[pc].clone());
+                    pc = pc + 1;
+                }
             }
         }
+
+        pc = pc + 1;
+
+        match code[pc] {
+            PUSH_STR(ref s) => {
+                methods.push(Method_ty {
+                    _name  : s.clone(),
+                    _code  : cb.clone(),
+                });
+            },
+            _ => { assert!(false); }
+        }
+
+        cb = Vec::new();
+
     }
 
     pc
 }
+
+
+
+pub trait Object {
+    fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>) -> Gc<_Object>;
+    fn tyof(&self) -> &str;
+}
+

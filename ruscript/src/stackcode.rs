@@ -15,7 +15,7 @@ pub enum SCode {
     PUSH_STR(Gc<String>), // Push string of attribute on stack,
 
     FRMEND, // End code literal mode, indicate the number of globals, and push the frame object on stack
-    CLASS,
+    CLASS(int, int),
 
     PRINT,
 }

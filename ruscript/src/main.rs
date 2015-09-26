@@ -10,7 +10,6 @@ use ruscript::framety::*;
 use ruscript::classty::*;
 use gc::*;
 use ruscript::stackcode::SCode::*;
-use ruscript::Object;
 
 fn main() {
     {

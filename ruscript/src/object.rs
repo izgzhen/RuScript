@@ -21,14 +21,14 @@ pub enum _Object {
 }
 
 impl Object for _Object {
-    fn call(&self, name : &str, args: Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {
         match self {
-            &Int(ref intty) => intty.call(name, args),
-            &Arr(ref arrty) => arrty.call(name, args),
-            &Str(ref strty) => strty.call(name, args),
-            &Frm(ref frmty) => frmty.call(name, args),
-            &Cls(ref clsty) => clsty.call(name, args),
-            &Its(ref itsty) => itsty.call(name, args),
+            &Int(ref intty) => intty.call(name, args, env),
+            &Arr(ref arrty) => arrty.call(name, args, env),
+            &Str(ref strty) => strty.call(name, args, env),
+            &Frm(ref frmty) => frmty.call(name, args, env),
+            &Cls(ref clsty) => clsty.call(name, args, env),
+            &Its(ref itsty) => itsty.call(name, args, env),
             &Non => {
                 println!("None object is not cllable");
                 Gc::new(Non)
