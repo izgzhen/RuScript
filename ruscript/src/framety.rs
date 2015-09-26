@@ -57,7 +57,7 @@ impl Object for Frame_ty {
                         &RET => {
                             let x = self.stack.borrow_mut().pop().unwrap();
                             return x;
-                        }
+                        },
                         // _ => {
                         //     println!("unknown instruction");
                         // }

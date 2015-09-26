@@ -9,6 +9,7 @@ type Source = [Statement]
 
 data Statement = Assignment String Expr
                | ClassDecl String [String] [MethodDecl]
+               | Print Expr
                | Return Expr
                deriving (Show)
 
@@ -26,6 +27,8 @@ data Term = Var String
 
 --------- Parser ------------
 
+parseSrc = testParser pSrc
+
 testParser p = parse p ""
 
 pSrc :: CharParser () Source
@@ -33,6 +36,7 @@ pSrc = many (whiteSpace *> pStmt <* (char ';' <* whiteSpace))
 
 pStmt = Assignment <$> (pIdent <* pEq) <*> pExpr
     <|> pClassDecl
+    <|> Print <$> (reserved "print" *> whiteSpace *> pExpr)
     <|> Return <$> (reserved "return" *> whiteSpace *> pExpr)
 
 -- Helper
@@ -71,7 +75,7 @@ pTerm =  Var <$> pIdent
 pEq   = whiteSpace *> reservedOp "="
 pPlus = whiteSpace *> reservedOp "+"
 
-reservedNames = ["class", "fn", "global", "new", "return"]
+reservedNames = ["class", "fn", "global", "new", "return", "print"]
 reservedOpNames = ["=", "+"]
 
 langDef :: Tok.LanguageDef ()

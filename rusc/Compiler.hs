@@ -28,6 +28,7 @@ data SCode = SPushG Int
            | SClass Int Int
            | SPopG Int -- Pop the stack top to the globals[i]
            | SPopL Int -- Pop the stack top to the locals[i]
+           | SPrint    -- Print the element on stack top
            deriving (Show, Eq)
 
 type Config = ()
@@ -37,9 +38,21 @@ data State = State {
   locals         :: Maybe (M.Map String Int),
   visibleGlobals :: Maybe [String],
   nextId  :: Int
+} deriving (Show)
+
+initConfig = ()
+
+initState = State {
+  globals = M.empty,
+  locals  = Nothing,
+  visibleGlobals = Nothing,
+  nextId  = 0
 }
 
 type Compiler = ExceptT String (RWS Config [SCode] State)
+
+
+runCompiler src = runRWS (runExceptT (compile src)) initConfig initState
 
 compile :: Source -> Compiler ()
 compile [] = return ()
@@ -52,6 +65,10 @@ compile (s:ss) = case s of
         tell (map SPushStr attrs)
         mapM_ emitMethod methods
         emit $ SClass (length attrs) (length methods)
+        compile ss
+  Print expr -> do
+        pushExpr expr
+        emit SPrint
         compile ss
   Return expr -> ifInMethod $ do
         pushExpr expr
@@ -75,7 +92,7 @@ withGlobals name f = do
     glbs <- globals <$> get
     case M.lookup name glbs of
         Just i  -> f i
-        Nothing -> throwError $ "unable to resolve name: " ++ name
+        Nothing -> withNextId $ \i -> addGlobal name i >> f i
 
 emitMethod :: MethodDecl -> Compiler ()
 emitMethod (MethodDecl name args glbs src) = do
