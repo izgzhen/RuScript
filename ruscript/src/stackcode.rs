@@ -17,5 +17,7 @@ pub enum SCode {
     FRMEND, // End code literal mode, indicate the number of globals, and push the frame object on stack
     CLASS(int, int),
 
+    POPG(ObjIdentTy),
+
     PRINT,
 }

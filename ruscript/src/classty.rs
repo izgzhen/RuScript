@@ -20,22 +20,9 @@ pub struct Method_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Class_ty {
-    name    : Gc<String>,
+    // name    : Gc<String>,
     methods : Vec<Method_ty>,
-    attrs   : Vec<String>,
-}
-
-
-impl Class_ty {
-    pub fn new(name : &str, ms : Vec<Method_ty>, attrs : Vec<String>, env : &mut Env) {
-        unsafe {
-            env.classes.push(Gc::new(Class_ty {
-                name : Gc::new(name.to_string()),
-                methods : ms,
-                attrs : attrs,
-            }));
-        }
-    }
+    attrs   : Vec<Gc<String>>,
 }
 
 impl Object for Class_ty {
@@ -108,7 +95,7 @@ impl Env {
 }
 
     
-fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: usize) -> usize {
+pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: usize) -> (Gc<Class_ty>, usize) {
     let mut pc : usize = start;
     let mut attrs = Vec::new();
     let mut methods = Vec::new();
@@ -155,9 +142,14 @@ fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start: us
 
         cb = Vec::new();
 
+        pc = pc + 1;
     }
 
-    pc
+    (Gc::new(Class_ty {
+                // name : Gc::new(name.to_string()),
+                methods : methods,
+                attrs   : attrs,
+            }) , pc)
 }
 
 
