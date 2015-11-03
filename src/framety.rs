@@ -29,12 +29,12 @@ impl Frame_ty {
 }
 
 impl Object for Frame_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "__run__" => {
                 for i in 0..self.codeblock.len() {
                     let ref inst = self.codeblock[i];
-                    interprete(&inst, &args, &self.stack, env);
+                    interprete(&inst, &args, &self.stack, env, globals);
                 }
 
                 Gc::new(Non)

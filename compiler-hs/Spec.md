@@ -20,12 +20,12 @@ The compiler is itself written in Haskell and serves as a dependent component in
 <constructor>   := <ident>()
 <statement>     := <assignment>;
                  | <classDecl>
+                 | return <expr>
 <classDecl>     := class <ident> { [ <attrDecl> | <methodDecl> ] }
 <attrDecl>      := <ident>
 <methodDecl>    := fn <ident>([<ident>,]) {
                             [<globalDecl>]
-                            [<assignment>]
-                            <expr>
+                            [<statments>]
                         }
 <globalDecl>    := global <ident>
 ```

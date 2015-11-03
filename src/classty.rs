@@ -27,7 +27,7 @@ pub struct Class_ty {
 
 impl Object for Class_ty {
     #[allow(unused_variables)]
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             m => {
                 println!("no such method {:?}", m);
@@ -52,11 +52,11 @@ pub struct Instance_ty{
 }
 
 impl Object for Instance_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {        
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {        
         for m in self.parent.methods.iter() {
             if (*m._name) == name.to_string() {
                 let frame = Frame_ty::new(Box::new(m._code.clone()), env);
-                return frame.call("__run__", args.clone(), env);
+                return frame.call("__run__", args.clone(), env, globals);
             }
         }
 
@@ -81,7 +81,7 @@ pub fn __new__(class : Gc<Class_ty>, env: Gc<Env>) -> Gc<_Object> {
 #[derive(Trace)]
 pub struct Env {
     pub classes : Vec<Gc<Class_ty>>,
-    pub globals : Vec<Gc<_Object>>,
+    pub global_objs: Vec<Gc<_Object>>,
 }
 
 impl Env {
@@ -155,7 +155,7 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 
 
 pub trait Object {
-    fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>) -> Gc<_Object>;
+    fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>, &mut Vec<Gc<_Object>>) -> Gc<_Object>;
     fn tyof(&self) -> &str;
 }
 

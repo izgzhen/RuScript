@@ -8,14 +8,19 @@ use super::classty::*;
 use super::primty::*;
 
 
-pub fn interprete(inst: &SCode, locals: &Vec<Gc<_Object>>, stack: &GcCell<Vec<Gc<_Object>>>, env: &Gc<Env>) -> Gc<_Object> {
+pub fn interprete(inst: &SCode,
+                  locals: &Vec<Gc<_Object>>,
+                  stack: &GcCell<Vec<Gc<_Object>>>,
+                  env: &Gc<Env>,
+                  globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
+    println!("interpreting {:?}", inst);
     match inst {
         &PUSHL(x) => {
             stack.borrow_mut().push(locals[x as usize].clone());
         },
         &ADD => {        },
         &CALL(recv, ref method, narg) => {
-            let ref obj = env.globals[recv as usize];
+            let ref obj = env.global_objs[recv as usize];
 
             let mut params = Vec::new();
 
@@ -23,7 +28,7 @@ pub fn interprete(inst: &SCode, locals: &Vec<Gc<_Object>>, stack: &GcCell<Vec<Gc
                 let x = stack.borrow_mut().pop().unwrap();
                 params.push(x.clone());
             }
-            return obj.call(method, params, env);
+            return obj.call(method, params, env, globals);
         },
         &RET => {
             let x = stack.borrow_mut().pop().unwrap();
@@ -43,13 +48,21 @@ pub fn interprete(inst: &SCode, locals: &Vec<Gc<_Object>>, stack: &GcCell<Vec<Gc
         },
         &PRINT => {
             let x = stack.borrow_mut().pop().unwrap();
-            x.call("__print__", vec![], env);
+            x.call("__print__", vec![], env, globals);
         },
         &PUSHG(x) => {
-            stack.borrow_mut().push(env.globals[x as usize].clone());
+            stack.borrow_mut().push(globals[x as usize].clone());
         },                        
+        &POPG(x) => {
+            let i = x as usize;
+            if GLOBAL_MAXSIZE > i {
+               globals[i] = stack.borrow_mut().pop().unwrap(); 
+            } else {
+                assert!(false, "globals is not as many as {}", i + 1);
+            }
+        },
         _ => {
-            println!("illegal instruction");
+            assert!(false, "illegal instruction: {:?}", inst);
         }
     }
 

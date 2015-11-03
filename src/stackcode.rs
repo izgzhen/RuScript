@@ -1,7 +1,8 @@
 use super::*;
 use gc::*;
+use std::fmt::*;
 
-#[derive(Trace, Clone)]
+#[derive(Trace, Clone, Debug)]
 pub enum SCode {
     PUSHL(ObjIdentTy),
     PUSHG(ObjIdentTy),
@@ -21,3 +22,4 @@ pub enum SCode {
 
     PRINT,
 }
+

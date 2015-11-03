@@ -12,6 +12,8 @@ use gc::*;
 pub type ObjIdentTy = i32;
 pub type ArgIdentTy = i8;
 
+pub const GLOBAL_MAXSIZE : usize = 10;
+
 #[allow(non_camel_case_types)]
 pub type int = i64;
 
@@ -33,18 +35,22 @@ use stackcode::SCode::*;
 use classty::*;
 use interprete::*;
 
-pub fn run(class_def_code : &Vec<SCode>, top_level_code: &Vec<SCode>) {
-    let mut globals : Vec<Gc<_Object>> = Vec::new();
+pub fn run(class_def_code : &Vec<SCode>, top_level_code: &Vec<SCode>, top_level_objs: Vec<Gc<_Object>>) {
+    let mut globals = Vec::with_capacity(self::GLOBAL_MAXSIZE);
+    let locals = Vec::new();
     let stack : GcCell<Vec<Gc<_Object>>> = GcCell::new(Vec::new());
-    let env : Gc<Env> = load(class_def_code);
+    let env : Gc<Env> = Gc::new(Env {
+            classes: load(class_def_code),
+            global_objs: top_level_objs,
+        });
 
     for inst in top_level_code {
-        interprete(inst, &globals, &stack, &env);
+        interprete(inst, &locals, &stack, &env, &mut globals);
     }
  
 }
 
-pub fn load(decl_code: &Vec<SCode>) -> Gc<Env> {
+pub fn load(decl_code: &Vec<SCode>) -> Vec<Gc<Class_ty>> {
     let mut pc : usize = 0;
     let mut classes = Vec::new();
     while pc < decl_code.len() {
@@ -58,10 +64,7 @@ pub fn load(decl_code: &Vec<SCode>) -> Gc<Env> {
         }
     }
 
-    Gc::new(Env {
-        classes : classes,
-        globals : Vec::new(),
-    })
+    classes
 }
 
 

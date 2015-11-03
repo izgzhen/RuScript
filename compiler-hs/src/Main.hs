@@ -11,7 +11,8 @@ main = do
         case parseSrc txt of
             Left err -> putStrLn $ "Error in parsing: " ++ show err
             Right src -> do
-                putStrLn $ "Src:\n" ++ show src
+                putStrLn "Source code:"
+                putStrLn $ showSource src
                 case runCompiler src of
                     (Right (), s, w) -> do
                         putStrLn $ "Final State: \n" ++ show s
@@ -19,5 +20,5 @@ main = do
                         mapM_ (putStrLn . show) w
                     (Left errMsg, s, w) -> do
                         putStrLn $ "Error: " ++ errMsg
-        else putStrLn "usage: runghc Main.hs <path>"
+        else putStrLn "usage: rusc <path>"
 

@@ -21,14 +21,14 @@ pub enum _Object {
 }
 
 impl Object for _Object {
-    fn call(&self, name : &str, args: Vec<Gc<_Object>>, env: &Gc<Env>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match self {
-            &Int(ref intty) => intty.call(name, args, env),
-            &Arr(ref arrty) => arrty.call(name, args, env),
-            &Str(ref strty) => strty.call(name, args, env),
-            &Frm(ref frmty) => frmty.call(name, args, env),
-            &Cls(ref clsty) => clsty.call(name, args, env),
-            &Its(ref itsty) => itsty.call(name, args, env),
+            &Int(ref intty) => intty.call(name, args, env, globals),
+            &Arr(ref arrty) => arrty.call(name, args, env, globals),
+            &Str(ref strty) => strty.call(name, args, env, globals),
+            &Frm(ref frmty) => frmty.call(name, args, env, globals),
+            &Cls(ref clsty) => clsty.call(name, args, env, globals),
+            &Its(ref itsty) => itsty.call(name, args, env, globals),
             &Non => {
                 println!("None object is not cllable");
                 Gc::new(Non)
@@ -49,7 +49,7 @@ impl Object for _Object {
     }
 }
 
-
+#[test]
 impl Drop for _Object {
     fn drop(&mut self) {
         COUNT_DROPPED.with(|count| count.set(count.get() + 1)); 

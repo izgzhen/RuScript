@@ -7,14 +7,30 @@ import qualified Text.Parsec.Token as Tok
 
 type Source = [Statement]
 
+showSource :: Source -> String
+showSource = unlines . map show
+
 data Statement = Assignment String Expr
                | ClassDecl String [String] [MethodDecl]
                | Print Expr
                | Return Expr
-               deriving (Show)
 
+instance Show Statement where
+  show (Assignment name expr) = name ++ " = " ++ show expr
+  show (ClassDecl name attrs methods) = "class " ++ name ++ " {\n" ++
+                                        unlines (map ("\t" ++) $ attrs ++ map show methods) ++
+                                        "}"
+  show (Print expr) = "print " ++ show expr
+  show (Return expr) = "return " ++ show expr
 
-data MethodDecl = MethodDecl String [String] [String] [Statement] deriving (Show)
+data MethodDecl = MethodDecl String [String] [String] [Statement]
+
+instance Show MethodDecl where
+  show (MethodDecl name args globals stmts) = "fn " ++ name ++ " {\n" ++
+                                              unlines ( map ("\t" ++)
+                                                   (map ("global " ++) globals ++
+                                                    map show stmts)) ++ 
+                                              "}"
 
 data Expr = Single Term
           | Plus Term Term
