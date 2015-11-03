@@ -1,4 +1,0 @@
-[submodule "rust-gc"]
-	path = rust-gc
-	url = https://github.com/izgzhen/rust-gc
-

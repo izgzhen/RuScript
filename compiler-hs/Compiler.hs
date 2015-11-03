@@ -15,8 +15,9 @@ import qualified Data.Map as M
 
 -- XXX: Maybe some debug info ... like line number, can be forged into the monad stack
 
-data SCode = SPushG Int
-           | SPushL Int
+data SCode = SPushL Int
+           | SPushG Int
+           | SPopG Int
            | SAdd
            | SCall Int String Int
            | SRet
