@@ -1,8 +1,6 @@
 #![crate_name = "ruscript"]
 
-#![feature(plugin, custom_derive, custom_attribute)]
-#![feature(box_syntax)]
-#![feature(test)]
+#![feature(plugin, custom_derive, custom_attribute, box_syntax, test, convert)]
 #![plugin(gc_plugin)]
 extern crate gc;
 extern crate test;

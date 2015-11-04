@@ -27,35 +27,37 @@ pub enum SCode {
     PRINT,
 }
 
-fn deserialize(bytes: &[u8]) -> SCode {
-    let size = bytes[0] as usize;
-    let opcode = bytes[1];
+pub fn deserialize(bytes: &[u8], pos: usize) -> (SCode, usize) {
+    let size = bytes[pos] as usize;
+    let opcode = bytes[pos + 1];
     let mut operands: Vec<i32> = vec![];
     let mut i = 2;
     while i < size + 1 {
         let mut operand: i32 = 0;
         for j in 0..4 {
-            operand = operand + ((bytes[i + 3 - j] as i32) << (j * 8));
+            operand = operand + ((bytes[pos + i + 3 - j] as i32) << (j * 8));
         }
         i = i + 4;
         operands.push(operand)
     }
 
-    match opcode {
+    let scode = match opcode {
         0 => PUSHL(operands[0]),
         1 => PUSHG(operands[0]),
-        2 => ADD,
-//         3 => // CALL(operands[0], ) {}
-        4 => RET,
-        5 => NEW(operands[0]),
-        6 => PUSH_INT(operands[0] as int),
-//        7 => 
-        8 => FRMEND,
-        9 => CLASS(operands[0], operands[1]),
-        10 => POPG(operands[0]),
+        2 => POPG(operands[0]),
+        3 => ADD,
+//      4 => // CALL(operands[0], ) {}
+        5 => RET,
+        6 => NEW(operands[0]),
+        7 => PUSH_INT(operands[0] as int),
+//      8 => 
+        9 => FRMEND,
+        10 => CLASS(operands[0], operands[1]),
         11 => PRINT,
-        _ => { unimplemented!(); }
-    }
+        _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
+    };
+
+    (scode, pos + size + 1)
 }
 
 #[test]
