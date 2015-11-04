@@ -3,6 +3,7 @@ RuScript
 Status: Prototyping
 
 ## Features
+
 * Object Runtime System with Garbage Collection
 * Stack-based Bytecode Format
 * High-level Language
@@ -19,22 +20,38 @@ The compiler is written in Haskell and serves as a independent component in the 
 ## Spec
 
 ```
-<source>        := [<statement>]
+<source>        := [<statement>;]
+
 <assignment>    := <identifier> = <expr>
+
 <expr>          := <term> + <term>
-                 | <constructor>
+                 | <term>
+
 <term>          := <int>
                  | <ident>
-<constructor>   := <ident>()
-<statement>     := <assignment>;
+                 | <string>
+                 | new <ident>
+                 | <ident>.<ident>([<expr>,])
+
+<statement>     := <assignment>
                  | <classDecl>
+                 | print <expr>
                  | return <expr>
+
 <classDecl>     := class <ident> { [ <attrDecl> | <methodDecl> ] }
+
 <attrDecl>      := <ident>
+
 <methodDecl>    := fn <ident>([<ident>,]) {
                             [<globalDecl>]
                             [<statments>]
                         }
+
 <globalDecl>    := global <ident>
 ```
+
+## TODOs
+* Simple test of local attrs
+* Write unit tests
+* Write behaviour spec
 
