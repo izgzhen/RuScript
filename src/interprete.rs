@@ -14,7 +14,7 @@ pub fn interprete(inst: &SCode,
                   env: &Gc<Env>,
                   globals: &mut Vec<Gc<_Object>>) {
 
-    println!("interpreting {:?}", inst);
+    println!("interpreting: {:?}", inst);
 
     match inst {
         &PUSHL(x) => {

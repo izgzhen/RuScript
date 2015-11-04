@@ -9,21 +9,18 @@ class example {
 
 obj = new example;
 
+class example2 {
+    fn bridge(x, y) {
+        global obj;
+        return obj.adder(x, y);
+    }
+};
+
 a = 1;
 b = 2;
-c = obj.adder(a, b);
+
+obj2 = new example2;
+
+c = obj.adder(a, b); # c should be 3
 print c;
-
-
-
-# class example2 {
-#     fn bridge(x, y) {
-#         global obj;
-#         return obj(x, y);
-#     }
-# }
-
-# obj2 = new example2
-
-# c = obj2.bridge(a, b) # c should be 3
 

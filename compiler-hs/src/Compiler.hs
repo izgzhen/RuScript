@@ -9,10 +9,6 @@ import Control.Monad.Except
 import qualified Data.Map as M
 import Control.Monad
 import NameSpace
--- Bytecode compiler for ruscript language
-
--- XXX: Maybe String should be put into the data section and left just a reference in the text ....
---- But this is not difficult to modify whatsoever
 
 -- XXX: Maybe some debug info ... like line number, can be forged into the monad stack
 
@@ -36,6 +32,7 @@ type Config = ()
 data Scope = Scope {
   globals        :: NameSpace,
   locals         :: Maybe NameSpace,
+  classes        :: NameSpace,
   visibleGlobals :: Maybe [String]
 } deriving (Show)
 
@@ -44,6 +41,7 @@ initConfig = ()
 initScope = Scope {
   globals = initNameSpace,
   locals  = Nothing,
+  classes = initNameSpace,
   visibleGlobals = Nothing
 }
 
@@ -58,7 +56,7 @@ compile (s:ss) = case s of
         pushExpr expr
         emit $ SPopG i
         compile ss
-  ClassDecl name attrs methods -> withGlobals name $ \i -> do
+  ClassDecl name attrs methods -> withClasses name $ \i -> do
         emit $ SClass (length attrs) (length methods)
         tell (map SPushStr attrs)
         mapM_ emitMethod methods
@@ -84,7 +82,7 @@ pushTerm tm = case tm of
     Var x    -> pushVar x
     LitInt i -> emit $ SPushInt i
     LitStr s -> emit $ SPushStr s
-    New className -> withGlobals className $ emit . SNew
+    New className -> withClasses className $ emit . SNew
     call@(Call _ _ _) -> compileCall call
 
 compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
@@ -107,6 +105,13 @@ withGlobals name f = do
     case lookupName name glbs of
         Just i  -> f i
         Nothing -> addGlobal name >>= f
+
+withClasses :: String -> (Int -> Compiler ()) -> Compiler ()
+withClasses name f = do
+    clss <- classes <$> get
+    case lookupName name clss of
+        Just i  -> f i
+        Nothing -> addClass name >>= f
 
 emitMethod :: MethodDecl -> Compiler ()
 emitMethod (MethodDecl name args glbs src) = do
@@ -148,36 +153,48 @@ pushLocal x = do
         Nothing -> return Nothing
     Nothing  -> return Nothing
 
-addVisibleGlobals glbs = modify $ \(Scope g l v) -> Scope g l (f v)
+addVisibleGlobals glbs = modify $ \scope -> scope { visibleGlobals = f (visibleGlobals scope) }
   where
     f Nothing = Just glbs
     f (Just gs) = Just (gs ++ glbs)
 
 addLocal :: String -> Compiler Int
 addLocal name = do
-  Scope g (Just l) v <- get
+  scope <- get
+  let Just l = locals scope
   let (l', nid) = insertName name l
-  put $ Scope g (Just l') v
-  return nid
-
-addAnonyLocal :: Compiler Int
-addAnonyLocal = do
-  Scope g (Just l) v <- get
-  let (l', nid) = insertAnony l
-  put $ Scope g (Just l') v
+  put $ scope { locals = Just l'}
   return nid
 
 addGlobal :: String -> Compiler Int
 addGlobal name = do
-  Scope g l v <- get
-  let (g', nid) = insertName name g
-  put $ Scope g' l v
+  scope <- get
+  let (g', nid) = insertName name $ globals scope
+  put $ scope { globals = g'}
+  return nid
+
+addAnonyLocal :: Compiler Int
+addAnonyLocal = do
+  scope <- get
+  let Just l = locals scope
+  let (l', nid) = insertAnony l
+  put $ scope { locals = Just l'}
   return nid
 
 
+addClass :: String -> Compiler Int
+addClass name = do
+  scope <- get
+  let (c', nid) = insertName name $ classes scope
+  put $ scope { classes = c'}
+  return nid
+
 enterMethod f = do
-  modify $ \(Scope g Nothing Nothing) -> Scope g (Just initNameSpace) (Just [])
-  f
-  modify $ \(Scope g _ _) -> Scope g Nothing Nothing
+  maybeLocals <- locals <$> get
+  if maybeLocals == Nothing then do
+    modify $ \scope -> scope { locals = Just initNameSpace, visibleGlobals = Just [] }
+    f
+    modify $ \scope -> scope { locals = Nothing, visibleGlobals = Nothing }
+    else f
 
 
