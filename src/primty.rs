@@ -123,7 +123,7 @@ impl String_ty {
 impl Object for String_ty {
     fn call(&self, name: &str, _: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
-            "__print__" =>  {
+            "__print__" => { // Just literal printing
                 print!("{}", *(self.string));
                 Gc::new(Non)
             },

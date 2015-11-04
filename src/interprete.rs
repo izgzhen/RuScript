@@ -9,20 +9,33 @@ use super::primty::*;
 
 
 pub fn interprete(inst: &SCode,
-                  locals: &Vec<Gc<_Object>>,
+                  scratch: &mut Vec<Gc<_Object>>,
                   stack: &GcCell<Vec<Gc<_Object>>>,
                   env: &Gc<Env>,
                   globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
 
-    // println!("interpreting {:?}", inst);
+    println!("interpreting {:?}", inst);
 
     match inst {
         &PUSHL(x) => {
-            stack.borrow_mut().push(locals[x as usize].clone());
+            stack.borrow_mut().push(scratch[x as usize].clone());
         },
-        &ADD => {        },
+        &POPL(x) => {
+            let i = x as usize;
+            if GLOBAL_MAXSIZE > i {
+               scratch[i] = stack.borrow_mut().pop().unwrap(); 
+            } else {
+                assert!(false, "scratch is not as many as {}", i + 1);
+            }
+        },
+        &ADD => {
+            let a1 = stack.borrow_mut().pop().unwrap();
+            let a2 = stack.borrow_mut().pop().unwrap();
+            let ret = a1.call("add", vec![a2], env, globals);
+            stack.borrow_mut().push(ret);
+        },
         &CALL(recv, ref method, narg) => {
-            let ref obj = env.global_objs[recv as usize];
+            let ref obj = globals[recv as usize].clone();
 
             let mut params = Vec::new();
 

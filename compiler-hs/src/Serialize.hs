@@ -39,6 +39,7 @@ serialize (SPushStr str) = Segment (fromIntegral 8) $ strToWord32Arr str
 serialize SFrameEnd      = segify 9 []
 serialize (SClass i1 i2) = segify 10 [i1, i2]
 serialize SPrint         = segify 11 []
+serialize (SPopL i)      = segify 12 [i]
 -- serialize x = error $ "unimplelemented serialization of: " ++ show x
 
 

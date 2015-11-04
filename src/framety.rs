@@ -31,7 +31,11 @@ impl Object for Frame_ty {
             "__run__" => {
                 for i in 0..self.codeblock.len() {
                     let ref inst = self.codeblock[i];
-                    interprete(&inst, &args, &self.stack, env, globals);
+                    let mut scratch = vec![];
+                    for o in &args {
+                        scratch.push(o.clone());
+                    }
+                    interprete(&inst, &mut scratch, &self.stack, env, globals);
                 }
 
                 Gc::new(Non)

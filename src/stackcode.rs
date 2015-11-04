@@ -21,6 +21,7 @@ pub enum SCode {
     CLASS(Integer, Integer),
 
     POPG(Integer),
+    POPL(Integer),
 
     PRINT,
 }
@@ -45,7 +46,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         1 => PUSHG(operands[0]),
         2 => POPG(operands[0]),
         3 => ADD,
-        4 => CALL(operands[0], read_string(bytes[pos + 10 .. pos + size + 5].to_vec()), operands[1]),
+        4 => CALL(operands[0], read_string(bytes[pos + 10 .. pos + size + 1].to_vec()), operands[1]),
         5 => RET,
         6 => NEW(operands[0]),
         7 => PUSH_INT(operands[0] as Integer),
@@ -53,6 +54,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         9 => FRMEND,
         10 => CLASS(operands[0], operands[1]),
         11 => PRINT,
+        12 => POPL(operands[0]),
         _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
     };
 
@@ -68,10 +70,46 @@ fn test_deserialize() {
 }
 
 fn read_string(v: Vec<u8>) -> Gc<String> {
-    match String::from_utf8(v) {
-        Ok(s) => {
-            Gc::new(s.clone())
-        },
-        Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+    let mut ret: String = "".to_string();
+    if v.len() > 4 { // Deal with the completely coded segment
+        match String::from_utf8(v[0..(v.len() - 4)].to_vec()) {
+            Ok(s) => {
+                ret = ret + &s;
+            },
+            Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+        }
+
+        let mut i = v.len() - 4;
+        while i < v.len() && v[i] == 0 {
+            i = i + 1;
+        }
+
+        if i < v.len() {
+            match String::from_utf8(v[i..v.len()].to_vec()) {
+                Ok(s) => {
+                    ret = ret + &s;
+                },
+                Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+            }
+        }
+    } else {
+        let mut i = 0;
+        while i < v.len() && v[i] == 0 {
+            i = i + 1;
+        }
+
+        if i < v.len() {
+            match String::from_utf8(v[i..v.len()].to_vec()) {
+                Ok(s) => {
+                    ret = ret + &s;
+                },
+                Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+            }
+        }
     }
+
+    Gc::new(ret.clone())
 }
+
+
+

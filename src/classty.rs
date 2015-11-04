@@ -78,7 +78,6 @@ pub fn __new__(class : Gc<Class_ty>, _: Gc<Env>) -> Gc<_Object> {
 #[derive(Trace)]
 pub struct Env {
     pub classes : Vec<Gc<Class_ty>>,
-    pub global_objs: Vec<Gc<_Object>>,
 }
 
 impl Env {

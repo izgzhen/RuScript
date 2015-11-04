@@ -16,9 +16,9 @@ data NameSpace = NameSpace {
 initNameSpace = NameSpace M.empty 0
 
 
-insertName name (NameSpace m i) = (NameSpace (M.insert name i m) (i + 1), i + 1)
+insertName name (NameSpace m i) = (NameSpace (M.insert name i m) (i + 1), i)
 
 lookupName name (NameSpace m i) = M.lookup name m
 
-insertAnony (NameSpace m i) = (NameSpace m (i + 1), i + 1)
+insertAnony (NameSpace m i) = (NameSpace m (i + 1), i)
 

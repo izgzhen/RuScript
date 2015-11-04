@@ -28,6 +28,7 @@ data SCode = SPushL Int
            | SFrameEnd
            | SClass Int Int
            | SPrint
+           | SPopL Int
            deriving (Show, Eq)
 
 type Config = ()
@@ -47,7 +48,6 @@ initScope = Scope {
 }
 
 type Compiler = ExceptT String (RWS Config [SCode] Scope)
-
 
 runCompiler src = runRWS (runExceptT (compile src)) initConfig initScope
 
@@ -88,17 +88,18 @@ pushTerm tm = case tm of
     call@(Call _ _ _) -> compileCall call
 
 compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
-    prms <- foldM 
-            (\pis p -> do
-                i <- addAnonyLocal
-                pushExpr p
-                emit $ SPopG i
-                return (i : pis)
-              )
-            []
-            params
-    mapM_ (emit . SPushG) prms
-    emit $ SCall recvi method $ length prms
+    enterMethod $ do
+      prms <- foldM 
+              (\pis p -> do
+                  i <- addAnonyLocal
+                  pushExpr p
+                  emit $ SPopL i
+                  return (i : pis)
+                )
+              []
+              params
+      mapM_ (emit . SPushG) prms
+      emit $ SCall recvi method $ length prms
 
 withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()
 withGlobals name f = do
