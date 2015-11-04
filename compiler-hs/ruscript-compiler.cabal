@@ -16,7 +16,8 @@ executable rusc
   main-is:             Main.hs
   other-modules:       Compiler,
                        Parser,
-                       Serialize
+                       Serialize,
+                       NameSpace
   other-extensions:    FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
                        mtl >=2.2 && <2.3,

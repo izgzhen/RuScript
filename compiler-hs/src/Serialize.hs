@@ -9,10 +9,10 @@ import Data.ByteString (unpack)
 import Data.List.Split (chunksOf)
 import Data.Bits (shiftL)
 
-data Segment = Segment Word8 [Word32]
+data Segment = Segment Word8 [Word32] deriving Show
 
 inBytes :: Segment -> Word8
-inBytes (Segment opcode operands) = fromIntegral $ 1 + length operands * 4
+inBytes (Segment opcode operands) = fromIntegral (1 + length operands * 4)
 
 instance Binary Segment where
     put seg@(Segment opcode operands) = do

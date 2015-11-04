@@ -17,31 +17,46 @@ data Statement = Assignment String Expr
                | Return Expr
 
 instance Show Statement where
-  show (Assignment name expr) = name ++ " = " ++ show expr
+  show (Assignment name expr) = name ++ " = " ++ show expr ++ ";"
   show (ClassDecl name attrs methods) = "class " ++ name ++ " {\n" ++
                                         unlines (map ("\t" ++) $ attrs ++ map show methods) ++
-                                        "}"
-  show (Print expr) = "print " ++ show expr
-  show (Return expr) = "return " ++ show expr
+                                        "};"
+  show (Print expr) = "print " ++ show expr ++ ";"
+  show (Return expr) = "return " ++ show expr ++ ";"
 
 data MethodDecl = MethodDecl String [String] [String] [Statement]
 
 instance Show MethodDecl where
-  show (MethodDecl name args globals stmts) = "fn " ++ name ++ " {\n" ++
-                                              unlines ( map ("\t" ++)
+  show (MethodDecl name args globals stmts) = "fn " ++ name ++ " (" ++ sepShow args ++ ") {\n" ++
+                                              unlines ( map ("\t\t" ++)
                                                    (map ("global " ++) globals ++
                                                     map show stmts)) ++ 
-                                              "}"
+                                              "\t}"
+
+sepShow [] = ""
+sepShow [x] = x
+sepShow (x:y:xs) = x ++ ", " ++ sepShow (y:xs)
 
 data Expr = Single Term
           | Plus Term Term
-          | New String
-          deriving (Show)
+
+instance Show Expr where
+    show (Single t) = show t
+    show (Plus t1 t2) = show t1 ++ " + " ++ show t2
 
 data Term = Var String
           | LitInt Int
           | LitStr String
-          deriving (Show)
+          | New String
+          | Call String String [Expr]
+
+instance Show Term where
+    show (LitStr s) = "\"" ++ s ++ "\""
+    show (LitInt i) = show i
+    show (Var v) = v
+    show (New name) = "new " ++ name
+    show (Call objName methodName params) = objName ++ "." ++ methodName ++ "(" ++ sepShow (map show params) ++ ")"
+
 
 --------- Parser ------------
 
@@ -81,14 +96,16 @@ pMethodDecl = do
 
 pArgs = whiteSpace *> (parens $ pIdent `sepEndBy1` (char ',' <* whiteSpace))
 
-pExpr = New    <$> (reserved "new" *> pIdent)
-    <|> Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
+pExpr = Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
     <|> Single <$> (whiteSpace *> pTerm)
 
-pTerm =  LitStr <$> (char '\"' *> (many C.alphaNum) <* char '\"')
+pTerm =  LitStr <$> parseString
+     <|> New <$> (reserved "new" *> pIdent)
+     <|> try pCall
      <|> Var <$> pIdent
      <|> (LitInt . fromIntegral) <$> pInt
 
+pCall = Call <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy1` (char ',' <* whiteSpace))
 
 --------- LangDef -----------
 
@@ -122,3 +139,23 @@ reservedOp = Tok.reservedOp lexer
 whiteSpace = Tok.whiteSpace lexer
 pIdent     = Tok.identifier lexer
 pInt       = Tok.integer lexer
+
+escape :: Parser String
+escape = do
+    d <- char '\\'
+    c <- oneOf "\\\"0nrvtbf" -- all the characters which can be escaped
+    return [d, c]
+
+nonEscape :: Parser Char
+nonEscape = noneOf "\\\"\0\n\r\v\t\b\f"
+
+character :: Parser String
+character = fmap return nonEscape <|> escape
+
+parseString :: Parser String
+parseString = do
+    char '"'
+    strings <- many character
+    char '"'
+    return $ concat strings
+
