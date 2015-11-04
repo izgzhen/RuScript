@@ -26,10 +26,7 @@ impl Object for Class_ty {
     #[allow(unused_variables)]
     fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
-            m => {
-                println!("no such method {:?}", m);
-                Gc::new(Non)
-            }
+            m => call_fail("Class_ty", m)
         }
     }
 
@@ -57,8 +54,7 @@ impl Object for Instance_ty {
             }
         }
 
-        println!("no such method {:?}", name);
-        Gc::new(Non)
+        call_fail("Instance_ty", name)
     }
 
     fn tyof(&self) -> &str {
@@ -152,5 +148,10 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 pub trait Object {
     fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>, &mut Vec<Gc<_Object>>) -> Gc<_Object>;
     fn tyof(&self) -> &str;
+}
+
+pub fn call_fail(ty: &str, name: &str) -> Gc<_Object> {
+    println!("{:?} no such method {:?}", ty, name);
+    Gc::new(Non)
 }
 

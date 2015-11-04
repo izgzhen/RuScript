@@ -8,7 +8,7 @@ use super::classty::*;
 ///////////////// Int //////////////////
 
 #[allow(non_camel_case_types)]
-#[derive(Trace)]
+#[derive(Trace, Debug)]
 pub struct Int_ty {
     _i : Integer,
 }
@@ -43,10 +43,7 @@ impl Object for Int_ty {
                 print!("{}", self._i);
                 Gc::new(Non)
             },
-            m => {
-                println!("no such method {:?}", m);
-                Gc::new(Non)
-            }
+            m => call_fail("Int_ty", m)
         }
     }
 
@@ -94,10 +91,7 @@ impl Object for Array_ty {
 
                 Gc::new(Non)
             },
-            m => {
-                println!("no such method {:?}", m);
-                Gc::new(Non)
-            }
+            m => call_fail("Array_ty", m)
         }
     }
 
@@ -127,10 +121,7 @@ impl Object for String_ty {
                 print!("{}", *(self.string));
                 Gc::new(Non)
             },
-            m => {
-                println!("no such method {:?}", m);
-                Gc::new(Non)
-            },
+            m => call_fail("String_ty", m)
         }
     }
 
