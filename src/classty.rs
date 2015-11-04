@@ -1,12 +1,9 @@
 use gc::*;
 use framety::*;
-use super::*;
 use super::object::*;
 use super::object::_Object::*;
 use super::stackcode::*;
 use super::stackcode::SCode::*;
-
-use std::cell::*;
 
 ///////////////// Class //////////////////
 
@@ -69,7 +66,7 @@ impl Object for Instance_ty {
     }
 }
 
-pub fn __new__(class : Gc<Class_ty>, env: Gc<Env>) -> Gc<_Object> {
+pub fn __new__(class : Gc<Class_ty>, _: Gc<Env>) -> Gc<_Object> {
     Gc::new(_Object::Its(Instance_ty{
         // env    : env.clone(),
         parent : class.clone(),
@@ -114,11 +111,10 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 
 
     let mut cb = Vec::new();
-    let mut flag = false;
 
     for _ in 0..n_methods {
 
-        while true {
+        loop {
             match code[pc] {
                 FRMEND => break,
                 _ => {

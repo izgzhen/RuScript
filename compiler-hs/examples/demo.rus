@@ -1,7 +1,8 @@
 # Demo of RuScript
 
 a = "123";
-print a;
+b = a;
+print b;
 
 # class example {
 #     fn adder(x, y) {

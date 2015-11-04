@@ -1,13 +1,20 @@
 use gc::*;
-use super::*;
 use self::_Object::*;
 use classty::*;
 use primty::*;
 use framety::*;
 
 // used for profiling
-use std::cell::Cell;
-thread_local!(static COUNT_DROPPED: Cell<u8> = Cell::new(0u8));
+// use std::cell::Cell;
+// thread_local!(static COUNT_DROPPED: Cell<u8> = Cell::new(0u8));
+
+// impl Drop for _Object {
+//     fn drop(&mut self) {
+//         COUNT_DROPPED.with(|count| count.set(count.get() + 1)); 
+//         println!("Dropping Object");
+//     }
+// }
+
 
 #[derive(Trace)]
 pub enum _Object {
@@ -48,13 +55,5 @@ impl Object for _Object {
         }
     }
 }
-
-
-// impl Drop for _Object {
-//     fn drop(&mut self) {
-//         COUNT_DROPPED.with(|count| count.set(count.get() + 1)); 
-//         println!("Dropping Object");
-//     }
-// }
 
 

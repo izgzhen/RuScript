@@ -1,11 +1,8 @@
 use stackcode::*;
-use stackcode::SCode::*;
 use gc::*;
-use super::*;
 use super::object::*;
 use super::object::_Object::*;
 use super::classty::*;
-use super::primty::*;
 use super::interprete::*;
 
 ///////////////// Frame //////////////////

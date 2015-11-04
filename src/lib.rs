@@ -1,18 +1,15 @@
 #![crate_name = "ruscript"]
 
-#![feature(plugin, custom_derive, custom_attribute, box_syntax, test, convert)]
+#![feature(plugin, custom_derive, custom_attribute, box_syntax, test)]
 #![plugin(gc_plugin)]
 extern crate gc;
 extern crate test;
 
 use gc::*;
 
-pub type ObjIdentTy = i32;
-pub type ArgIdentTy = i32;
+pub type Integer = i32;
 
 pub const GLOBAL_MAXSIZE : usize = 10;
-
-pub type int = i32;
 
 pub mod object;
 use object::*;

@@ -10,24 +10,24 @@ use super::classty::*;
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Int_ty {
-    _i : int,
+    _i : Integer,
 }
 
 impl Int_ty {
-    pub fn new(i: int) -> Gc<_Object> {
+    pub fn new(i: Integer) -> Gc<_Object> {
         Gc::new(Int(Int_ty {
             _i : i
         }))
     }
 
-    pub fn unbox(&self) -> int {
+    pub fn unbox(&self) -> Integer {
         self._i
     }
 }
 
 
 impl Object for Int_ty {
-    fn call(&self, name : &str, args: Vec<Gc<_Object>>, env : &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name : &str, args: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "add" => {
                 let ref b = *args[0];
@@ -71,7 +71,7 @@ impl Array_ty {
 }
 
 impl Object for Array_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "at" =>  {
                 let ref n = *args[0];
@@ -121,7 +121,7 @@ impl String_ty {
 }
 
 impl Object for String_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
+    fn call(&self, name: &str, _: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "__print__" =>  {
                 print!("{}", *(self.string));

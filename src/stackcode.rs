@@ -1,29 +1,26 @@
 use super::*;
 use gc::*;
-use std::fmt::*;
-use std::io::Bytes;
-use std::io;
-use std::io::Take;
 use self::SCode::*;
 use std::string::String;
 
+#[allow(non_camel_case_types)]
 #[derive(Trace, Clone, Debug)]
 pub enum SCode {
-    PUSHL(ObjIdentTy),
-    PUSHG(ObjIdentTy),
+    PUSHL(Integer),
+    PUSHG(Integer),
     ADD, // "Add" two objects together
-    CALL(ObjIdentTy, Gc<String>, ArgIdentTy), // Receiver, Method name, and number of arguments
+    CALL(Integer, Gc<String>, Integer), // Receiver, Method name, and number of arguments
     RET, // return the stack top,
 
     // Extended
-    NEW(ObjIdentTy), // Construct and push constructed object on stack
-    PUSH_INT(int), // Push a literal on stack
+    NEW(Integer), // Construct and push constructed object on stack
+    PUSH_INT(Integer), // Push a literal on stack
     PUSH_STR(Gc<String>), // Push string of attribute on stack,
 
     FRMEND, // End code literal mode, indicate the number of globals, and push the frame object on stack
-    CLASS(int, int),
+    CLASS(Integer, Integer),
 
-    POPG(ObjIdentTy),
+    POPG(Integer),
 
     PRINT,
 }
@@ -51,7 +48,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         4 => CALL(operands[0], read_string(bytes[pos + 10 .. pos + size + 5].to_vec()), operands[1]),
         5 => RET,
         6 => NEW(operands[0]),
-        7 => PUSH_INT(operands[0] as int),
+        7 => PUSH_INT(operands[0] as Integer),
         8 => PUSH_STR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
         9 => FRMEND,
         10 => CLASS(operands[0], operands[1]),
