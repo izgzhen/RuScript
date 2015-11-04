@@ -4,6 +4,7 @@ module Parser where
 
 import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as Tok
+import qualified Text.Parsec.Char as C
 
 type Source = [Statement]
 
@@ -39,6 +40,7 @@ data Expr = Single Term
 
 data Term = Var String
           | LitInt Int
+          | LitStr String
           deriving (Show)
 
 --------- Parser ------------
@@ -83,8 +85,10 @@ pExpr = New    <$> (reserved "new" *> pIdent)
     <|> Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
     <|> Single <$> (whiteSpace *> pTerm)
 
-pTerm =  Var <$> pIdent
+pTerm =  LitStr <$> (char '\"' *> (many C.alphaNum) <* char '\"')
+     <|> Var <$> pIdent
      <|> (LitInt . fromIntegral) <$> pInt
+
 
 --------- LangDef -----------
 

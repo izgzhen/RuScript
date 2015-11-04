@@ -27,12 +27,10 @@ fn main() {
                 let len = bytes.len();
                 let mut start_pos = 0;
                 loop {
-                    let (scode, last_pos) = deserialize(bytes.as_slice(), start_pos);
+                    let scode: SCode = deserialize(bytes.as_slice(), &mut start_pos);
                     top_code.push(scode);
-                    if last_pos >= len {
+                    if start_pos >= len {
                         break
-                    } else {
-                        start_pos = last_pos;
                     }
                 }
             },
@@ -40,7 +38,6 @@ fn main() {
         }
 
         ruscript::run(&classes, &top_code, top_objs);
-
     }
 
     gc::force_collect();

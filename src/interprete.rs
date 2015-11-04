@@ -13,7 +13,9 @@ pub fn interprete(inst: &SCode,
                   stack: &GcCell<Vec<Gc<_Object>>>,
                   env: &Gc<Env>,
                   globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
-    println!("interpreting {:?}", inst);
+
+    // println!("interpreting {:?}", inst);
+
     match inst {
         &PUSHL(x) => {
             stack.borrow_mut().push(locals[x as usize].clone());
@@ -62,7 +64,7 @@ pub fn interprete(inst: &SCode,
             }
         },
         _ => {
-            assert!(false, "illegal instruction: {:?}", inst);
+            // assert!(false, "illegal instruction: {:?}", inst);
         }
     }
 

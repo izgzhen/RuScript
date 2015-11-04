@@ -122,8 +122,16 @@ impl String_ty {
 
 impl Object for String_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>, env : &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
-        println!("no such method {:?}", name);
-        Gc::new(Non)
+        match name {
+            "__print__" =>  {
+                print!("{}", *(self.string));
+                Gc::new(Non)
+            },
+            m => {
+                println!("no such method {:?}", m);
+                Gc::new(Non)
+            },
+        }
     }
 
     fn tyof(&self) -> &str { "<string>" }

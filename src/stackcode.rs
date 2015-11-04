@@ -5,6 +5,7 @@ use std::io::Bytes;
 use std::io;
 use std::io::Take;
 use self::SCode::*;
+use std::string::String;
 
 #[derive(Trace, Clone, Debug)]
 pub enum SCode {
@@ -27,7 +28,8 @@ pub enum SCode {
     PRINT,
 }
 
-pub fn deserialize(bytes: &[u8], pos: usize) -> (SCode, usize) {
+pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
+    let pos = *pos_mut;
     let size = bytes[pos] as usize;
     let opcode = bytes[pos + 1];
     let mut operands: Vec<i32> = vec![];
@@ -46,22 +48,33 @@ pub fn deserialize(bytes: &[u8], pos: usize) -> (SCode, usize) {
         1 => PUSHG(operands[0]),
         2 => POPG(operands[0]),
         3 => ADD,
-//      4 => // CALL(operands[0], ) {}
+        4 => CALL(operands[0], read_string(bytes[pos + 10 .. pos + size + 5].to_vec()), operands[1]),
         5 => RET,
         6 => NEW(operands[0]),
         7 => PUSH_INT(operands[0] as int),
-//      8 => 
+        8 => PUSH_STR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
         9 => FRMEND,
         10 => CLASS(operands[0], operands[1]),
         11 => PRINT,
         _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
     };
 
-    (scode, pos + size + 1)
+    *pos_mut = pos + size + 1;
+
+    scode
 }
 
 #[test]
 fn test_deserialize() {
     let bytes = vec![5, 1, 0, 0, 0, 12];
     println!("{:?}", deserialize(&bytes));
+}
+
+fn read_string(v: Vec<u8>) -> Gc<String> {
+    match String::from_utf8(v) {
+        Ok(s) => {
+            Gc::new(s.clone())
+        },
+        Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+    }
 }

@@ -84,6 +84,7 @@ pushExpr (Plus tm1 tm2) = do
 pushTerm tm = case tm of
     Var x    -> pushVar x
     LitInt i -> emit $ SPushInt i
+    LitStr s -> emit $ SPushStr s
 
 withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()
 withGlobals name f = do
