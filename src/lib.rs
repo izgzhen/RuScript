@@ -10,12 +10,11 @@ extern crate test;
 use gc::*;
 
 pub type ObjIdentTy = i32;
-pub type ArgIdentTy = i8;
+pub type ArgIdentTy = i32;
 
 pub const GLOBAL_MAXSIZE : usize = 10;
 
-#[allow(non_camel_case_types)]
-pub type int = i64;
+pub type int = i32;
 
 pub mod object;
 use object::*;
@@ -37,6 +36,11 @@ use interprete::*;
 
 pub fn run(class_def_code : &Vec<SCode>, top_level_code: &Vec<SCode>, top_level_objs: Vec<Gc<_Object>>) {
     let mut globals = Vec::with_capacity(self::GLOBAL_MAXSIZE);
+    let void = primty::Int_ty::new(0);
+    for _ in 0..self::GLOBAL_MAXSIZE {
+        globals.push(void.clone());
+    }
+
     let locals = Vec::new();
     let stack : GcCell<Vec<Gc<_Object>>> = GcCell::new(Vec::new());
     let env : Gc<Env> = Gc::new(Env {

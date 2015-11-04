@@ -49,7 +49,7 @@ impl Object for _Object {
     }
 }
 
-#[test]
+
 impl Drop for _Object {
     fn drop(&mut self) {
         COUNT_DROPPED.with(|count| count.set(count.get() + 1)); 
