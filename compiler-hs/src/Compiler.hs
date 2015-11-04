@@ -98,7 +98,7 @@ compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
                 )
               []
               params
-      mapM_ (emit . SPushG) prms
+      mapM_ (emit . SPushL) prms
       emit $ SCall recvi method $ length prms
 
 withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()

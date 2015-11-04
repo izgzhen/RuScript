@@ -3,7 +3,7 @@ use stackcode::SCode::*;
 use gc::*;
 use super::*;
 use super::object::*;
-use super::object::_Object::*;
+// use super::object::_Object::*;
 use super::classty::*;
 use super::primty::*;
 
@@ -12,7 +12,7 @@ pub fn interprete(inst: &SCode,
                   scratch: &mut Vec<Gc<_Object>>,
                   stack: &GcCell<Vec<Gc<_Object>>>,
                   env: &Gc<Env>,
-                  globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
+                  globals: &mut Vec<Gc<_Object>>) {
 
     println!("interpreting {:?}", inst);
 
@@ -33,21 +33,6 @@ pub fn interprete(inst: &SCode,
             let a2 = stack.borrow_mut().pop().unwrap();
             let ret = a1.call("add", vec![a2], env, globals);
             stack.borrow_mut().push(ret);
-        },
-        &CALL(recv, ref method, narg) => {
-            let ref obj = globals[recv as usize].clone();
-
-            let mut params = Vec::new();
-
-            for _ in 0..narg {
-                let x = stack.borrow_mut().pop().unwrap();
-                params.push(x.clone());
-            }
-            return obj.call(method, params, env, globals);
-        },
-        &RET => {
-            let x = stack.borrow_mut().pop().unwrap();
-            return x;
         },
         &NEW(x) => {
             let obj = env.__new__(x as usize);
@@ -77,9 +62,7 @@ pub fn interprete(inst: &SCode,
             }
         },
         _ => {
-            // assert!(false, "illegal instruction: {:?}", inst);
+            assert!(false, "illegal instruction: {:?}", inst);
         }
     }
-
-    Gc::new(Non)
 }

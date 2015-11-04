@@ -44,7 +44,21 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
         });
 
     for inst in top_level_code {
-        interprete(inst, &mut scratch, &stack, &env, &mut globals);
+        match inst {
+            &SCode::RET => { },
+            &SCode::CALL(recv, ref method, narg) => {
+                let ref obj = globals[recv as usize].clone();
+
+                let mut params = Vec::new();
+
+                for _ in 0..narg {
+                    let x = stack.borrow_mut().pop().unwrap();
+                    params.push(x.clone());
+                }
+                stack.borrow_mut().push(obj.call(method, params, &env, &mut globals));
+            },
+            inst => interprete(inst, &mut scratch, &stack, &env, &mut globals)
+        }
     }
  
 }

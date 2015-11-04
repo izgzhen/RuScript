@@ -35,7 +35,23 @@ impl Object for Frame_ty {
                     for o in &args {
                         scratch.push(o.clone());
                     }
-                    interprete(&inst, &mut scratch, &self.stack, env, globals);
+                    match inst {
+                        &SCode::RET => {
+                            return self.stack.borrow_mut().pop().unwrap();
+                        },
+                        &SCode::CALL(recv, ref method, narg) => {
+                            let ref obj = globals[recv as usize].clone();
+
+                            let mut params = Vec::new();
+
+                            for _ in 0..narg {
+                                let x = self.stack.borrow_mut().pop().unwrap();
+                                params.push(x.clone());
+                            }
+                            return obj.call(method, params, env, globals);
+                        },
+                        inst => { interprete(&inst, &mut scratch, &self.stack, env, globals); }
+                    }
                 }
 
                 Gc::new(Non)
