@@ -94,7 +94,7 @@ pMethodDecl = do
                         <$> many (reserved "global" *> (whiteSpace *> pIdent <* char ';') <* whiteSpace)
                         <*> pSrc
 
-pArgs = whiteSpace *> (parens $ pIdent `sepEndBy1` (char ',' <* whiteSpace))
+pArgs = whiteSpace *> (parens $ pIdent `sepEndBy` (char ',' <* whiteSpace))
 
 pExpr = Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
     <|> Single <$> (whiteSpace *> pTerm)
@@ -105,7 +105,7 @@ pTerm =  LitStr <$> parseString
      <|> Var <$> pIdent
      <|> (LitInt . fromIntegral) <$> pInt
 
-pCall = Call <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy1` (char ',' <* whiteSpace))
+pCall = Call <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
 
 --------- LangDef -----------
 

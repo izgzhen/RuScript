@@ -51,7 +51,18 @@ The compiler is written in Haskell and serves as a independent component in the 
 ```
 
 ## TODOs
+* Simple test of global reference
 * Simple test of local attrs
 * Write unit tests
 * Write behaviour spec
+
+## In future
+* Inheritance & Encapsulation & Polymorphism
+* Optimization Loop
+* REPL interface
+
+
+
+
+
 

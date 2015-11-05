@@ -87,17 +87,8 @@ pushTerm tm = case tm of
 
 compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
     enterMethod $ do
-      prms <- foldM 
-              (\pis p -> do
-                  i <- addAnonyLocal
-                  pushExpr p
-                  emit $ SPopL i
-                  return (i : pis)
-                )
-              []
-              params
-      mapM_ (emit . SPushL) prms
-      emit $ SCall recvi method $ length prms
+      mapM_ pushExpr params
+      emit $ SCall recvi method $ length params
 
 withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()
 withGlobals name f = do
