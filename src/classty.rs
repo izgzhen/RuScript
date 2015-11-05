@@ -39,7 +39,7 @@ impl Object for Class_ty {
 
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
-pub struct Instance_ty{
+pub struct Instance_ty {
     // env     : Gc<Env>,
     parent  : Gc<Class_ty>,
     locals  : Vec<Gc<_Object>>,

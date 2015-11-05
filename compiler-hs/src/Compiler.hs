@@ -25,6 +25,9 @@ data SCode = SPushL Int
            | SClass Int Int
            | SPrint
            | SPopL Int
+           | SPopA Int
+           | SPushA Int
+           | SPushSelf
            deriving (Show, Eq)
 
 type Config = ()
@@ -33,7 +36,8 @@ data Scope = Scope {
   globals        :: NameSpace,
   locals         :: Maybe NameSpace,
   classes        :: NameSpace,
-  visibleGlobals :: Maybe [String]
+  visibleGlobals :: Maybe [String],
+  classScope     :: Maybe (M.Map String Int)
 } deriving (Show)
 
 initConfig = ()
@@ -42,7 +46,8 @@ initScope = Scope {
   globals = initNameSpace,
   locals  = Nothing,
   classes = initNameSpace,
-  visibleGlobals = Nothing
+  visibleGlobals = Nothing,
+  classScope = Nothing
 }
 
 type Compiler = ExceptT String (RWS Config [SCode] Scope)
@@ -59,7 +64,8 @@ compile (s:ss) = case s of
   ClassDecl name attrs methods -> withClasses name $ \i -> do
         emit $ SClass (length attrs) (length methods)
         tell (map SPushStr attrs)
-        mapM_ emitMethod methods
+        let classScope = M.fromList $ zip (attrs ++ map getMethodName methods) [0..]
+        enterClassScope classScope $ mapM_ emitMethod methods
         compile ss
   Print expr -> do
         pushExpr expr
@@ -84,11 +90,25 @@ pushTerm tm = case tm of
     LitStr s -> emit $ SPushStr s
     New className -> withClasses className $ emit . SNew
     call@(Call _ _ _) -> compileCall call
+    acc@(Access _ _)  -> compileAccess acc
 
+-- FIXME: PLEASE Consider self recursion
 compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
     enterMethod $ do
       mapM_ pushExpr params
       emit $ SCall recvi method $ length params
+
+-- FIXME: Current ClassScope is too coarse, should split out attrs and methods one day (or not?)
+compileAccess (Access "self" accessor) = inClass $ \cs -> do
+    case M.lookup accessor cs of
+        Just i  -> do
+          emit SPushSelf  -- Push self on top of stack
+          emit $ SPushA i -- Push attrs[i] of stacktop on top of stack
+        Nothing -> throwError $ accessor ++ " is not defined as attributes" 
+
+compileAccess (Access receiver accessor) = do
+    pushVar receiver
+    emit $ SPushAStr accessor
 
 withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()
 withGlobals name f = do
@@ -104,21 +124,16 @@ withClasses name f = do
         Just i  -> f i
         Nothing -> addClass name >>= f
 
+-- Shadowing Rule: Global > Local
 emitMethod :: MethodDecl -> Compiler ()
-emitMethod (MethodDecl name args glbs src) = do
-  enterMethod $ do
-    addVisibleGlobals glbs
-    mapM_ addLocal args
-    compile src
-  emit $ SFrameEnd
-  emit $ SPushStr name
+emitMethod (MethodDecl name args glbs src) = inClass $ \_ -> do
+    enterMethod $ do
+      addVisibleGlobals glbs
+      mapM_ addLocal args
+      compile src
+    emit $ SFrameEnd
+    emit $ SPushStr name
 
-ifInMethod :: Compiler () -> Compiler ()
-ifInMethod f = do
-  maybeLocals <- locals <$> get
-  if maybeLocals /= Nothing
-    then f
-    else throwError "Not in method scope"
 
 emit :: SCode -> Compiler ()
 emit x = tell [x]
@@ -180,6 +195,8 @@ addClass name = do
   put $ scope { classes = c'}
   return nid
 
+-- Scoping Helpers
+
 enterMethod f = do
   maybeLocals <- locals <$> get
   if maybeLocals == Nothing then do
@@ -189,3 +206,23 @@ enterMethod f = do
     else f
 
 
+enterClassScope cs f = do
+  modify $ \scope -> scope { classScope = Just cs }
+  f
+  modify $ \scope -> scope { classScope = Nothing }
+
+
+inClass :: (M.Map String Int -> Compiler ()) -> Compiler ()
+inClass f = do
+  maybeCS <- classScope <$> get
+  case maybeCS of
+    Just cs -> f cs
+    Nothing -> throwError "Not in class definition scope"
+
+
+ifInMethod :: Compiler () -> Compiler ()
+ifInMethod f = do
+  maybeLocals <- locals <$> get
+  if maybeLocals /= Nothing
+    then f
+    else throwError "Not in method scope"

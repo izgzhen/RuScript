@@ -24,6 +24,9 @@ pub enum SCode {
     POPL(Integer),
 
     PRINT,
+
+    POPA(Integer),
+    PUSHA(Integer),
 }
 
 pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
@@ -55,6 +58,9 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         10 => CLASS(operands[0], operands[1]),
         11 => PRINT,
         12 => POPL(operands[0]),
+        13 => POPA(operands[0]),
+        14 => PUSHA(operands[0]),
+        15 => PUSHSELF,
         _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
     };
 

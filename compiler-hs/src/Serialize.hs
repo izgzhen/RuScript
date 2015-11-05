@@ -27,19 +27,23 @@ instance Binary Segment where
         return $ Segment opcode operands
 
 serialize :: SCode -> Segment
-serialize (SPushL i) = segify 0 [i]
-serialize (SPushG i) = segify 1 [i]
-serialize (SPopG  i) = segify 2 [i]
-serialize SAdd       = segify 3 []
+serialize (SPushL i)     = segify 0 [i]
+serialize (SPushG i)     = segify 1 [i]
+serialize (SPopG  i)     = segify 2 [i]
+serialize SAdd           = segify 3 []
 serialize (SCall i name narg) = Segment (4 :: Word8) $ map fromIntegral [i, narg] ++ strToWord32Arr name
-serialize SRet       = segify 5 []
-serialize (SNew   i) = segify 6 [i]
+serialize SRet           = segify 5 []
+serialize (SNew   i)     = segify 6 [i]
 serialize (SPushInt i)   = segify 7 [i]
 serialize (SPushStr str) = Segment (fromIntegral 8) $ strToWord32Arr str
 serialize SFrameEnd      = segify 9 []
 serialize (SClass i1 i2) = segify 10 [i1, i2]
 serialize SPrint         = segify 11 []
 serialize (SPopL i)      = segify 12 [i]
+serialize (SPopA i)      = segify 13 [i]
+serialize (SPushA i)     = segify 14 [i]
+serialize SPushSelf      = segify 15 []
+serialize (SPushAStr s)  = Segment (fromIntegral 16) $ strToWord32Arr s
 -- serialize x = error $ "unimplelemented serialization of: " ++ show x
 
 

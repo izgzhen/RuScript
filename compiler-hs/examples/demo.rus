@@ -2,26 +2,26 @@
 
 
 class example {
-    fn adder(x, y) {
-        return x + y;
+    a;
+    b;
+    fn add() {
+        return self.a + self.b;
     }
 };
 
 obj = new example;
 
-class example2 {
-    fn bridge(x, y) {
-        global obj;
-        return obj.adder(x, y);
-    }
-};
+# class example2 {
+#     fn bridge(x, y) {
+#         global obj;
+#         return obj.adder(x, y);
+#     }
+# };
 
-a = 1;
-b = 2;
 
-obj2 = new example2;
+# obj2 = new example2;
 
-c = obj2.bridge(a, b); # c should be 3
-print c;
+# c = obj2.bridge(a, b); # c should be 3
+# print c;
 
 

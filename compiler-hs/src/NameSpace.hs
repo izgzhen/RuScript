@@ -4,6 +4,7 @@ module NameSpace (
 , insertName
 , lookupName
 , insertAnony
+, collectNames
 ) where
 
 import qualified Data.Map as M
@@ -21,3 +22,5 @@ lookupName name (NameSpace m i) = M.lookup name m
 
 insertAnony (NameSpace m i) = (NameSpace m (i + 1), i)
 
+collectNames :: [String] -> NameSpace
+collectNames = foldr (\n s -> fst $ insertName n s) initNameSpace

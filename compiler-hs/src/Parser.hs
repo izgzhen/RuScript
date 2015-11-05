@@ -19,12 +19,14 @@ data Statement = Assignment String Expr
 instance Show Statement where
   show (Assignment name expr) = name ++ " = " ++ show expr ++ ";"
   show (ClassDecl name attrs methods) = "class " ++ name ++ " {\n" ++
-                                        unlines (map ("\t" ++) $ attrs ++ map show methods) ++
+                                        unlines (map (\a -> "\t" ++ a ++ ";") $ attrs ++ map show methods) ++
                                         "};"
   show (Print expr) = "print " ++ show expr ++ ";"
   show (Return expr) = "return " ++ show expr ++ ";"
 
 data MethodDecl = MethodDecl String [String] [String] [Statement]
+
+getMethodName (MethodDecl n _ _ _) = n
 
 instance Show MethodDecl where
   show (MethodDecl name args globals stmts) = "fn " ++ name ++ " (" ++ sepShow args ++ ") {\n" ++
@@ -49,6 +51,7 @@ data Term = Var String
           | LitStr String
           | New String
           | Call String String [Expr]
+          | Access String String
 
 instance Show Term where
     show (LitStr s) = "\"" ++ s ++ "\""
@@ -56,6 +59,7 @@ instance Show Term where
     show (Var v) = v
     show (New name) = "new " ++ name
     show (Call objName methodName params) = objName ++ "." ++ methodName ++ "(" ++ sepShow (map show params) ++ ")"
+    show (Access objName attrName) = objName ++ "." ++ attrName
 
 
 --------- Parser ------------
@@ -78,7 +82,7 @@ pClassDecl = do
     reserved "class"
     className <- pIdent
     (as, ms) <- braces $ do
-        as <- many pIdent
+        as <- many (pIdent <* char ';' <* whiteSpace)
         ms <- many pMethodDecl
         return (as, ms)
     return $ ClassDecl className as ms
@@ -102,10 +106,13 @@ pExpr = Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
 pTerm =  LitStr <$> parseString
      <|> New <$> (reserved "new" *> pIdent)
      <|> try pCall
+     <|> try pAccess
      <|> Var <$> pIdent
      <|> (LitInt . fromIntegral) <$> pInt
 
 pCall = Call <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
+
+pAccess = Access <$> (pIdent <* char '.') <*> pIdent
 
 --------- LangDef -----------
 
