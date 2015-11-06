@@ -80,15 +80,6 @@ push (G i) = emit $ SPushG i
 push (L i) = emit $ SPushL i
 push (A i) = emit $ SPushA i
 
-call :: Scoped -> String -> Int -> Compiler ()
-call scoped m narg = case scoped of
-      G i -> emit $ SCallG i m narg
-      L i -> emit $ SCallL i m narg
-      _   -> error "can't call on attributes now"
-
-new :: ClassId -> Compiler ()
-new (ClassId i) = emit $ SNew i
-
 compile :: Source -> Compiler ()
 compile [] = return ()
 compile (s:ss) = case s of
@@ -96,14 +87,7 @@ compile (s:ss) = case s of
         pushExpr expr
         pop i
         compile ss
-  ClassDecl name attrs methods -> do
-        void $ addClass name
-        emit $ SClass (length attrs) (length methods)
-        tell (map SPushStr attrs)
-        let cscope = ClassScope (collectNames attrs)
-                                (collectNames $ map getMethodName methods)
-        enterClass cscope $ mapM_ emitMethod methods
-        compile ss
+  ClassDecl name attrs methods -> emitClass name attrs methods >> compile ss
   Print expr -> do
         pushExpr expr
         emit SPrint
@@ -113,7 +97,25 @@ compile (s:ss) = case s of
         emit SRet
         compile ss
 
--- stack top should reside the computed value
+-- Class Definition Generator
+
+emitClass :: String -> [String] -> [MethodDecl] -> Compiler ()
+emitClass name attrs methods = do
+    void $ addClass name
+    emit $ SClass (length attrs) (length methods)
+    tell (map SPushStr attrs)
+    let cscope = ClassScope (collectNames attrs)
+                            (collectNames $ map getMethodName methods)
+    enterClass cscope $ mapM_ emitMethod methods
+
+emitMethod :: MethodDecl -> Compiler ()
+emitMethod (MethodDecl name args glbs src) = inClass $ \_ -> do
+    enterMethod (S.fromList glbs) args $ compile src
+    emit $ SFrameEnd
+    emit $ SPushStr name
+
+-- Expression & Term Evaluation Generator
+
 pushExpr :: Expr -> Compiler ()
 pushExpr (Single tm) = pushTerm tm
 pushExpr (Plus tm1 tm2) = do
@@ -122,13 +124,14 @@ pushExpr (Plus tm1 tm2) = do
     emit SAdd
 
 pushTerm tm = case tm of
-    Var x    -> pushVar x
-    LitInt i -> emit $ SPushInt i
-    LitStr s -> emit $ SPushStr s
-    New className -> readClass className new
-    call@(Call _ _ _) -> compileCall call
-    acc@(Access _ _)  -> compileAccess acc
+    TVar x    -> pushVar x
+    TLitInt i -> emit $ SPushInt i
+    TLitStr s -> emit $ SPushStr s
+    TNew className -> readClass className new
+    TCall call  -> compileCall call
+    TAccess acc -> compileAccess acc
 
+compileCall :: Call -> Compiler ()
 compileCall (Call "self" method params) = inClass $ \cs -> do
     case lookupName method (methodNameSpace cs) of
         Just i  -> do
@@ -143,6 +146,7 @@ compileCall (Call receiver method params) = readVar receiver $ \recvi -> do
     mapM_ pushExpr params
     call recvi method $ length params
 
+compileAccess :: Access -> Compiler ()
 compileAccess (Access "self" accessor) = inClass $ \cs -> do
     case lookupName accessor (attrNameSpace cs) of
         Just i  -> do
@@ -153,6 +157,71 @@ compileAccess (Access "self" accessor) = inClass $ \cs -> do
 compileAccess (Access receiver accessor) = readVar receiver $ \recvi -> do
     push recvi
     emit $ SPushAStr accessor
+
+pushVar :: String -> Compiler ()
+pushVar x = writeVar x $ \scoped ->
+  case scoped of
+    G i -> emit $ SPushG i
+    L i -> emit $ SPushL i
+    A i -> emit $ SPushA i
+
+call :: Scoped -> String -> Int -> Compiler ()
+call scoped m narg = case scoped of
+      G i -> emit $ SCallG i m narg
+      L i -> emit $ SCallL i m narg
+      _   -> error "can't call on attributes now"
+
+new :: ClassId -> Compiler ()
+new (ClassId i) = emit $ SNew i
+
+-- Register Allocator
+
+addVar :: String -> Compiler Scoped
+addVar name = getContext >>= \ctx -> do
+  case ctx of
+    InMethod -> addLocal name
+    TopLevel -> addGlobal name
+
+addLocal :: String -> Compiler Scoped
+addLocal name = inMethod $ \lcs vS -> do
+  scope <- get
+  let (l', nid) = insertName name lcs
+  put $ scope { locals = Just (l', vS)}
+  return $ L nid
+
+addGlobal :: String -> Compiler Scoped
+addGlobal name = do
+  scope <- get
+  let (g', nid) = insertName name $ globals scope
+  put $ scope { globals = g'}
+  return $ G nid
+
+addAnonyLocal :: Compiler Scoped
+addAnonyLocal = inMethod $ \lcs vS -> do
+  scope <- get
+  let (l', nid) = insertAnony lcs
+  put $ scope { locals = Just (l', vS)}
+  return $ L nid
+
+-- Class Initializer
+
+addClass :: String -> Compiler ClassId
+addClass name = do
+  scope <- get
+  let (c', nid) = insertName name $ classes scope
+  put $ scope { classes = c'}
+  return $ ClassId nid
+
+-- Class Scoping
+
+readClass :: String -> (ClassId -> Compiler ()) -> Compiler ()
+readClass name f = do
+    clss <- classes <$> get
+    case lookupName name clss of
+        Just i  -> f $ ClassId i
+        Nothing -> throwError $ "can't find class " ++ name
+
+-- Register Scoping
 
 writeVar :: String -> (Scoped -> Compiler a) -> Compiler a
 writeVar name f = scopeVar name $ \mScoped -> do
@@ -189,63 +258,7 @@ scopeLocal locals name = do
         Nothing -> return $ Nothing
         Just i  -> return $ Just $ L i
 
-
-readClass :: String -> (ClassId -> Compiler ()) -> Compiler ()
-readClass name f = do
-    clss <- classes <$> get
-    case lookupName name clss of
-        Just i  -> f $ ClassId i
-        Nothing -> throwError $ "can't find class " ++ name
-
-emitMethod :: MethodDecl -> Compiler ()
-emitMethod (MethodDecl name args glbs src) = inClass $ \_ -> do
-    enterMethod (S.fromList glbs) args $ compile src
-    emit $ SFrameEnd
-    emit $ SPushStr name
-
-pushVar x = writeVar x $ \scoped ->
-  case scoped of
-    G i -> emit $ SPushG i
-    L i -> emit $ SPushL i
-    A i -> emit $ SPushA i
-
--- Id generater
-
-addVar :: String -> Compiler Scoped
-addVar name = getContext >>= \ctx -> do
-  case ctx of
-    InMethod -> addLocal name
-    TopLevel -> addGlobal name
-
-addLocal :: String -> Compiler Scoped
-addLocal name = inMethod $ \lcs vS -> do
-  scope <- get
-  let (l', nid) = insertName name lcs
-  put $ scope { locals = Just (l', vS)}
-  return $ L nid
-
-addGlobal :: String -> Compiler Scoped
-addGlobal name = do
-  scope <- get
-  let (g', nid) = insertName name $ globals scope
-  put $ scope { globals = g'}
-  return $ G nid
-
-addAnonyLocal :: Compiler Scoped
-addAnonyLocal = inMethod $ \lcs vS -> do
-  scope <- get
-  let (l', nid) = insertAnony lcs
-  put $ scope { locals = Just (l', vS)}
-  return $ L nid
-
-addClass :: String -> Compiler ClassId
-addClass name = do
-  scope <- get
-  let (c', nid) = insertName name $ classes scope
-  put $ scope { classes = c'}
-  return $ ClassId nid
-
--- Scoping Helpers
+-- Context Helpers
 
 enterMethod :: NameSet -> [String] -> Compiler a -> Compiler a
 enterMethod glbs args f = do

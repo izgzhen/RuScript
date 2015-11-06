@@ -46,22 +46,29 @@ instance Show Expr where
     show (Single t) = show t
     show (Plus t1 t2) = show t1 ++ " + " ++ show t2
 
-data Term = Var String
-          | LitInt Int
-          | LitStr String
-          | New String
-          | Call String String [Expr]
-          | Access String String
+data Term = TVar String
+          | TLitInt Int
+          | TLitStr String
+          | TNew String
+          | TCall Call
+          | TAccess Access
+
+data Call   = Call String String [Expr]
+data Access = Access String String
 
 instance Show Term where
-    show (LitStr s) = "\"" ++ s ++ "\""
-    show (LitInt i) = show i
-    show (Var v) = v
-    show (New name) = "new " ++ name
+    show (TLitStr s) = "\"" ++ s ++ "\""
+    show (TLitInt i) = show i
+    show (TVar v) = v
+    show (TNew name) = "new " ++ name
+    show (TCall call) = show call 
+    show (TAccess acc) = show acc
+
+instance Show Call where
     show (Call objName methodName params) = objName ++ "." ++ methodName ++ "(" ++ sepShow (map show params) ++ ")"
+
+instance Show Access where
     show (Access objName attrName) = objName ++ "." ++ attrName
-
-
 --------- Parser ------------
 
 parseSrc = testParser pSrc
@@ -103,12 +110,12 @@ pArgs = whiteSpace *> (parens $ pIdent `sepEndBy` (char ',' <* whiteSpace))
 pExpr = Plus   <$> try (whiteSpace *> pTerm <* pPlus) <*> (whiteSpace *> pTerm)
     <|> Single <$> (whiteSpace *> pTerm)
 
-pTerm =  LitStr <$> parseString
-     <|> New <$> (reserved "new" *> pIdent)
-     <|> try pCall
-     <|> try pAccess
-     <|> Var <$> pIdent
-     <|> (LitInt . fromIntegral) <$> pInt
+pTerm =  TLitStr <$> parseString
+     <|> TNew <$> (reserved "new" *> pIdent)
+     <|> try (TCall <$> pCall)
+     <|> try (TAccess <$> pAccess)
+     <|> TVar <$> pIdent
+     <|> (TLitInt . fromIntegral) <$> pInt
 
 pCall = Call <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
 
