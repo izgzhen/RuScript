@@ -46,7 +46,7 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
     for inst in top_level_code {
         match inst {
             &SCode::RET => { },
-            &SCode::CALL(recv, ref method, narg) => {
+            &SCode::CALLL(recv, ref method, narg) => {
                 let ref obj = globals[recv as usize].clone();
 
                 let mut params = Vec::new();

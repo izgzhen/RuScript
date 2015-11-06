@@ -39,7 +39,7 @@ impl Object for Frame_ty {
                         &SCode::RET => {
                             return self.stack.borrow_mut().pop().unwrap();
                         },
-                        &SCode::CALL(recv, ref method, narg) => {
+                        &SCode::CALLL(recv, ref method, narg) => {
                             let ref obj = globals[recv as usize].clone();
 
                             let mut params = Vec::new();

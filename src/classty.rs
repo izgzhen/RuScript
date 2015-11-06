@@ -17,7 +17,6 @@ pub struct Method_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Class_ty {
-    // name    : Gc<String>,
     methods : Vec<Method_ty>,
     attrs   : Vec<Gc<String>>,
 }

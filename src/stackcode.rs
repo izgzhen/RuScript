@@ -8,25 +8,22 @@ use std::string::String;
 pub enum SCode {
     PUSHL(Integer),
     PUSHG(Integer),
-    ADD, // "Add" two objects together
-    CALL(Integer, Gc<String>, Integer), // Receiver, Method name, and number of arguments
-    RET, // return the stack top,
-
-    // Extended
-    NEW(Integer), // Construct and push constructed object on stack
-    PUSH_INT(Integer), // Push a literal on stack
-    PUSH_STR(Gc<String>), // Push string of attribute on stack,
-
-    FRMEND, // End code literal mode, indicate the number of globals, and push the frame object on stack
-    CLASS(Integer, Integer),
-
     POPG(Integer),
-    POPL(Integer),
-
+    ADD,
+    CALLL(Integer, Gc<String>, Integer),
+    CALLG(Integer, Gc<String>, Integer),
+    RET,
+    NEW(Integer),
+    PUSH_INT(Integer),
+    PUSH_STR(Gc<String>),
+    FRMEND,
+    CLASS(Integer, Integer),
     PRINT,
-
+    POPL(Integer),
     POPA(Integer),
     PUSHA(Integer),
+    PUSHSELF,
+    PUSHASTR(Gc<String>),
 }
 
 pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
@@ -49,7 +46,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         1 => PUSHG(operands[0]),
         2 => POPG(operands[0]),
         3 => ADD,
-        4 => CALL(operands[0], read_string(bytes[pos + 10 .. pos + size + 1].to_vec()), operands[1]),
+        4 => CALLL(operands[0], read_string(bytes[pos + 10 .. pos + size + 1].to_vec()), operands[1]),
         5 => RET,
         6 => NEW(operands[0]),
         7 => PUSH_INT(operands[0] as Integer),
@@ -61,6 +58,8 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         13 => POPA(operands[0]),
         14 => PUSHA(operands[0]),
         15 => PUSHSELF,
+        16 => PUSHASTR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
+        17 => CALLG(operands[0], read_string(bytes[pos + 10 .. pos + size + 1].to_vec()), operands[1]),
         _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
     };
 

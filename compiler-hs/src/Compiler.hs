@@ -10,26 +10,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Control.Monad
 import NameSpace
-
-data SCode = SPushL Int
-           | SPushG Int
-           | SPopG Int
-           | SAdd
-           | SCallL Int String Int
-           | SCallG Int String Int
-           | SRet
-           | SNew Int
-           | SPushInt Int
-           | SPushStr String
-           | SFrameEnd
-           | SClass Int Int
-           | SPrint
-           | SPopL Int
-           | SPopA Int
-           | SPushA Int
-           | SPushSelf
-           | SPushAStr String
-           deriving (Show, Eq)
+import SCode
 
 type Config = ()
 
@@ -58,7 +39,6 @@ type NameSet = S.Set String
 
 
 type Compiler = ExceptT String (RWS Config [SCode] Scope)
-
 runCompiler src = runRWS (runExceptT (compile src)) initConfig initScope
 
 data Scoped = G Int | L Int | A Int deriving (Show)
@@ -123,6 +103,7 @@ pushExpr (Plus tm1 tm2) = do
     pushTerm tm2
     emit SAdd
 
+pushTerm :: Term -> Compiler ()
 pushTerm tm = case tm of
     TVar x    -> pushVar x
     TLitInt i -> emit $ SPushInt i
@@ -293,7 +274,5 @@ inClass f = do
 getContext :: Compiler Context
 getContext = do
   maybeLocals <- locals <$> get
-  if maybeLocals == Nothing then return InMethod
-    else return TopLevel
-
-
+  if maybeLocals == Nothing then return TopLevel
+    else return InMethod
