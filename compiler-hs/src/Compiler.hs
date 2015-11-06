@@ -7,16 +7,16 @@ import Control.Applicative ((<|>))
 import Control.Monad.RWS
 import Control.Monad.Except
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Control.Monad
 import NameSpace
-
--- XXX: Maybe some debug info ... like line number, can be forged into the monad stack
 
 data SCode = SPushL Int
            | SPushG Int
            | SPopG Int
            | SAdd
-           | SCall Int String Int
+           | SCallL Int String Int
+           | SCallG Int String Int
            | SRet
            | SNew Int
            | SPushInt Int
@@ -28,16 +28,16 @@ data SCode = SPushL Int
            | SPopA Int
            | SPushA Int
            | SPushSelf
+           | SPushAStr String
            deriving (Show, Eq)
 
 type Config = ()
 
 data Scope = Scope {
   globals        :: NameSpace,
-  locals         :: Maybe NameSpace,
+  locals         :: Maybe (NameSpace, NameSet),
   classes        :: NameSpace,
-  visibleGlobals :: Maybe [String],
-  classScope     :: Maybe (M.Map String Int)
+  classScope     :: Maybe ClassScope
 } deriving (Show)
 
 initConfig = ()
@@ -46,32 +46,69 @@ initScope = Scope {
   globals = initNameSpace,
   locals  = Nothing,
   classes = initNameSpace,
-  visibleGlobals = Nothing,
   classScope = Nothing
 }
+
+data ClassScope = ClassScope {
+  attrNameSpace   :: NameSpace,
+  methodNameSpace :: NameSpace
+} deriving (Show)
+
+type NameSet = S.Set String
+
 
 type Compiler = ExceptT String (RWS Config [SCode] Scope)
 
 runCompiler src = runRWS (runExceptT (compile src)) initConfig initScope
 
+data Scoped = G Int | L Int | A Int deriving (Show)
+
+data Context = TopLevel | InMethod deriving (Show)
+
+newtype ClassId = ClassId Int deriving (Show)
+
+emit :: SCode -> Compiler ()
+emit x = tell [x]
+
+pop :: Scoped -> Compiler ()
+pop (G i) = emit $ SPopG i
+pop (L i) = emit $ SPopL i
+pop (A i) = emit $ SPopA i
+
+push :: Scoped -> Compiler ()
+push (G i) = emit $ SPushG i
+push (L i) = emit $ SPushL i
+push (A i) = emit $ SPushA i
+
+call :: Scoped -> String -> Int -> Compiler ()
+call scoped m narg = case scoped of
+      G i -> emit $ SCallG i m narg
+      L i -> emit $ SCallL i m narg
+      _   -> error "can't call on attributes now"
+
+new :: ClassId -> Compiler ()
+new (ClassId i) = emit $ SNew i
+
 compile :: Source -> Compiler ()
 compile [] = return ()
 compile (s:ss) = case s of
-  Assignment lhs expr -> withGlobals lhs $ \i -> do
+  Assignment lhs expr -> writeVar lhs $ \i -> do
         pushExpr expr
-        emit $ SPopG i
+        pop i
         compile ss
-  ClassDecl name attrs methods -> withClasses name $ \i -> do
+  ClassDecl name attrs methods -> do
+        void $ addClass name
         emit $ SClass (length attrs) (length methods)
         tell (map SPushStr attrs)
-        let classScope = M.fromList $ zip (attrs ++ map getMethodName methods) [0..]
-        enterClassScope classScope $ mapM_ emitMethod methods
+        let cscope = ClassScope (collectNames attrs)
+                                (collectNames $ map getMethodName methods)
+        enterClass cscope $ mapM_ emitMethod methods
         compile ss
   Print expr -> do
         pushExpr expr
         emit SPrint
         compile ss
-  Return expr -> ifInMethod $ do
+  Return expr -> inMethod $ \_ _ -> do
         pushExpr expr
         emit SRet
         compile ss
@@ -88,131 +125,151 @@ pushTerm tm = case tm of
     Var x    -> pushVar x
     LitInt i -> emit $ SPushInt i
     LitStr s -> emit $ SPushStr s
-    New className -> withClasses className $ emit . SNew
+    New className -> readClass className new
     call@(Call _ _ _) -> compileCall call
     acc@(Access _ _)  -> compileAccess acc
 
--- FIXME: PLEASE Consider self recursion
-compileCall (Call receiver method params) = withGlobals receiver $ \recvi -> do
-    enterMethod $ do
-      mapM_ pushExpr params
-      emit $ SCall recvi method $ length params
+compileCall (Call "self" method params) = inClass $ \cs -> do
+    case lookupName method (methodNameSpace cs) of
+        Just i  -> do
+          mapM_ pushExpr params
+          emit SPushSelf  -- Push self on top of stack
+          selfi <- addLocal "self"
+          pop selfi
+          call selfi method $ length params
+        Nothing -> throwError $ method ++ " is not defined as methods"
 
--- FIXME: Current ClassScope is too coarse, should split out attrs and methods one day (or not?)
+compileCall (Call receiver method params) = readVar receiver $ \recvi -> do
+    mapM_ pushExpr params
+    call recvi method $ length params
+
 compileAccess (Access "self" accessor) = inClass $ \cs -> do
-    case M.lookup accessor cs of
+    case lookupName accessor (attrNameSpace cs) of
         Just i  -> do
           emit SPushSelf  -- Push self on top of stack
           emit $ SPushA i -- Push attrs[i] of stacktop on top of stack
         Nothing -> throwError $ accessor ++ " is not defined as attributes" 
 
-compileAccess (Access receiver accessor) = do
-    pushVar receiver
+compileAccess (Access receiver accessor) = readVar receiver $ \recvi -> do
+    push recvi
     emit $ SPushAStr accessor
 
-withGlobals :: String -> (Int -> Compiler ()) -> Compiler ()
-withGlobals name f = do
+writeVar :: String -> (Scoped -> Compiler a) -> Compiler a
+writeVar name f = scopeVar name $ \mScoped -> do
+    case mScoped of
+        Nothing -> addVar name >>= f
+        Just scoped -> f scoped
+
+readVar :: String -> (Scoped -> Compiler ()) -> Compiler ()
+readVar name f = scopeVar name $ \mScoped -> do
+    case mScoped of
+        Nothing -> throwError $ "can't find " ++ name ++ " in scope"
+        Just scoped -> f scoped
+
+scopeVar :: String -> (Maybe Scoped -> Compiler a) -> Compiler a
+scopeVar name f = do
+    maybeLocals <- locals <$> get
+    case maybeLocals of
+        Nothing -> f =<< scopeGlobal name
+        Just (locals, vGlobals) ->
+            if name `S.member` vGlobals then
+                scopeGlobal name >>= f
+                else scopeLocal locals name >>= f
+
+scopeGlobal :: String -> Compiler (Maybe Scoped)
+scopeGlobal name = do
     glbs <- globals <$> get
     case lookupName name glbs of
-        Just i  -> f i
-        Nothing -> addGlobal name >>= f
+        Just i  -> return $ Just $ G i
+        Nothing -> return Nothing
 
-withClasses :: String -> (Int -> Compiler ()) -> Compiler ()
-withClasses name f = do
+scopeLocal :: NameSpace -> String -> Compiler (Maybe Scoped)
+scopeLocal locals name = do
+    case lookupName name locals of
+        Nothing -> return $ Nothing
+        Just i  -> return $ Just $ L i
+
+
+readClass :: String -> (ClassId -> Compiler ()) -> Compiler ()
+readClass name f = do
     clss <- classes <$> get
     case lookupName name clss of
-        Just i  -> f i
-        Nothing -> addClass name >>= f
+        Just i  -> f $ ClassId i
+        Nothing -> throwError $ "can't find class " ++ name
 
--- Shadowing Rule: Global > Local
 emitMethod :: MethodDecl -> Compiler ()
 emitMethod (MethodDecl name args glbs src) = inClass $ \_ -> do
-    enterMethod $ do
-      addVisibleGlobals glbs
-      mapM_ addLocal args
-      compile src
+    enterMethod (S.fromList glbs) args $ compile src
     emit $ SFrameEnd
     emit $ SPushStr name
 
+pushVar x = writeVar x $ \scoped ->
+  case scoped of
+    G i -> emit $ SPushG i
+    L i -> emit $ SPushL i
+    A i -> emit $ SPushA i
 
-emit :: SCode -> Compiler ()
-emit x = tell [x]
+-- Id generater
 
-pushVar x = do
-  g <- pushGlobal x
-  l <- pushLocal x
-  case (g <|> l) of
-    Nothing -> throwError $ "Can't find " ++ x ++ " in scope"
-    Just inst -> emit inst
+addVar :: String -> Compiler Scoped
+addVar name = getContext >>= \ctx -> do
+  case ctx of
+    InMethod -> addLocal name
+    TopLevel -> addGlobal name
 
-pushGlobal x = do
-  glbs <- globals <$> get
-  case lookupName x glbs of
-      Just i  -> return $ Just $ SPushG i
-      Nothing -> return Nothing
-
-pushLocal x = do
-  m <- locals <$> get
-  case m of
-    Just lcs -> case lookupName x lcs of
-        Just i  -> return $ Just $ SPushL i
-        Nothing -> return Nothing
-    Nothing  -> return Nothing
-
-addVisibleGlobals glbs = modify $ \scope -> scope { visibleGlobals = f (visibleGlobals scope) }
-  where
-    f Nothing = Just glbs
-    f (Just gs) = Just (gs ++ glbs)
-
-addLocal :: String -> Compiler Int
-addLocal name = do
+addLocal :: String -> Compiler Scoped
+addLocal name = inMethod $ \lcs vS -> do
   scope <- get
-  let Just l = locals scope
-  let (l', nid) = insertName name l
-  put $ scope { locals = Just l'}
-  return nid
+  let (l', nid) = insertName name lcs
+  put $ scope { locals = Just (l', vS)}
+  return $ L nid
 
-addGlobal :: String -> Compiler Int
+addGlobal :: String -> Compiler Scoped
 addGlobal name = do
   scope <- get
   let (g', nid) = insertName name $ globals scope
   put $ scope { globals = g'}
-  return nid
+  return $ G nid
 
-addAnonyLocal :: Compiler Int
-addAnonyLocal = do
+addAnonyLocal :: Compiler Scoped
+addAnonyLocal = inMethod $ \lcs vS -> do
   scope <- get
-  let Just l = locals scope
-  let (l', nid) = insertAnony l
-  put $ scope { locals = Just l'}
-  return nid
+  let (l', nid) = insertAnony lcs
+  put $ scope { locals = Just (l', vS)}
+  return $ L nid
 
-
-addClass :: String -> Compiler Int
+addClass :: String -> Compiler ClassId
 addClass name = do
   scope <- get
   let (c', nid) = insertName name $ classes scope
   put $ scope { classes = c'}
-  return nid
+  return $ ClassId nid
 
 -- Scoping Helpers
 
-enterMethod f = do
+enterMethod :: NameSet -> [String] -> Compiler a -> Compiler a
+enterMethod glbs args f = do
+    modify $ \scope -> scope { locals = Just (initNameSpace, glbs) }
+    mapM_ addLocal args
+    x <- f
+    modify $ \scope -> scope { locals = Nothing }
+    return x
+
+inMethod :: (NameSpace -> NameSet -> Compiler a) -> Compiler a
+inMethod f = do
   maybeLocals <- locals <$> get
-  if maybeLocals == Nothing then do
-    modify $ \scope -> scope { locals = Just initNameSpace, visibleGlobals = Just [] }
-    f
-    modify $ \scope -> scope { locals = Nothing, visibleGlobals = Nothing }
-    else f
+  case maybeLocals of
+    Just (locals, vGlobals) -> f locals vGlobals
+    Nothing -> throwError "Not in method definition scope"
 
+enterClass :: ClassScope -> Compiler a -> Compiler a
+enterClass s f = do
+    modify $ \scope -> scope { classScope = Just s }
+    x <- f
+    modify $ \scope -> scope { classScope = Nothing }
+    return x
 
-enterClassScope cs f = do
-  modify $ \scope -> scope { classScope = Just cs }
-  f
-  modify $ \scope -> scope { classScope = Nothing }
-
-
-inClass :: (M.Map String Int -> Compiler ()) -> Compiler ()
+inClass :: (ClassScope -> Compiler a) -> Compiler a
 inClass f = do
   maybeCS <- classScope <$> get
   case maybeCS of
@@ -220,9 +277,10 @@ inClass f = do
     Nothing -> throwError "Not in class definition scope"
 
 
-ifInMethod :: Compiler () -> Compiler ()
-ifInMethod f = do
+getContext :: Compiler Context
+getContext = do
   maybeLocals <- locals <$> get
-  if maybeLocals /= Nothing
-    then f
-    else throwError "Not in method scope"
+  if maybeLocals == Nothing then return InMethod
+    else return TopLevel
+
+
