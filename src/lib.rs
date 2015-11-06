@@ -31,11 +31,11 @@ use interprete::*;
 
 pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
     let mut globals = Vec::with_capacity(self::GLOBAL_MAXSIZE);
-    let mut scratch = Vec::with_capacity(self::GLOBAL_MAXSIZE);
+    let mut locals = Vec::with_capacity(self::GLOBAL_MAXSIZE);
     let void = primty::Int_ty::new(0);
     for _ in 0..self::GLOBAL_MAXSIZE {
         globals.push(void.clone());
-        scratch.push(void.clone());
+        locals.push(void.clone());
     }
 
     let stack : GcCell<Vec<Gc<_Object>>> = GcCell::new(Vec::new());
@@ -45,8 +45,10 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
 
     for inst in top_level_code {
         match inst {
-            &SCode::RET => { },
-            &SCode::CALLL(recv, ref method, narg) => {
+            &SCode::CALLL(_, _, _) => {
+                assert!(false, "can't call local object on top-level!");
+            },
+            &SCode::CALLG(recv, ref method, narg) => {
                 let ref obj = globals[recv as usize].clone();
 
                 let mut params = Vec::new();
@@ -57,7 +59,11 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
                 }
                 stack.borrow_mut().push(obj.call(method, params, &env, &mut globals));
             },
-            inst => interprete(inst, &mut scratch, &stack, &env, &mut globals)
+            &SCode::RET => { },
+            &SCode::PUSHSELF => {
+                assert!(false, "can't use self object on top-level!");
+            },
+            inst => interprete(inst, &mut locals, &stack, &env, &mut globals)
         }
     }
  

@@ -4,6 +4,7 @@ use super::object::*;
 use super::object::_Object::*;
 use super::stackcode::*;
 use super::stackcode::SCode::*;
+use std::fmt::Debug;
 
 ///////////////// Class //////////////////
 
@@ -146,6 +147,14 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 
 pub trait Object {
     fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>, &mut Vec<Gc<_Object>>) -> Gc<_Object>;
+    fn access(&self, name: &str) -> Gc<_Object> {
+        access_fail(self.tyof(), name)
+    }
+
+    fn access_i(&self, index: usize) -> Gc<_Object> {
+        access_fail(self.tyof(), index)
+    }
+
     fn tyof(&self) -> &str;
 }
 
@@ -154,3 +163,7 @@ pub fn call_fail(ty: &str, name: &str) -> Gc<_Object> {
     Gc::new(Non)
 }
 
+pub fn access_fail<N>(ty: &str, name: N) -> Gc<_Object> where N: Debug {
+    println!("{:?} no such attr {:?}", ty, name);
+    Gc::new(Non)
+}

@@ -14,7 +14,6 @@ data SCode = SPushL Int
            | SClass Int Int
            | SPrint
            | SPopL Int
-           | SPopA Int
            | SPushA Int
            | SPushSelf
            | SPushAStr String

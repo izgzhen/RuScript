@@ -53,7 +53,7 @@ emit x = tell [x]
 pop :: Scoped -> Compiler ()
 pop (G i) = emit $ SPopG i
 pop (L i) = emit $ SPopL i
-pop (A i) = emit $ SPopA i
+pop (A i) = throwError "Can't write to attributes now"
 
 push :: Scoped -> Compiler ()
 push (G i) = emit $ SPushG i

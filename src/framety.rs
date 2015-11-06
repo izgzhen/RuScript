@@ -1,3 +1,4 @@
+
 use stackcode::*;
 use gc::*;
 use super::object::*;
@@ -19,8 +20,8 @@ impl Frame_ty {
     pub fn new(cb : Box<Vec<SCode>>, env : &Gc<Env>) -> Gc<Frame_ty> {
         Gc::new(Frame_ty{
             codeblock : cb,
-            env : env.clone(),
-            stack : GcCell::new(Vec::new())
+            env   : env.clone(),
+            stack : GcCell::new(Vec::new()),
         })
     }
 }
@@ -31,18 +32,16 @@ impl Object for Frame_ty {
             "__run__" => {
                 for i in 0..self.codeblock.len() {
                     let ref inst = self.codeblock[i];
-                    let mut scratch = vec![];
+                    let mut locals = vec![];
                     for o in &args {
-                        scratch.push(o.clone());
+                        locals.push(o.clone());
                     }
                     match inst {
-                        &SCode::RET => {
-                            return self.stack.borrow_mut().pop().unwrap();
-                        },
                         &SCode::CALLL(recv, ref method, narg) => {
-                            let ref obj = globals[recv as usize].clone();
+                            let ref obj = locals[recv as usize].clone();
 
                             let mut params = Vec::new();
+                            params.push(locals[recv as usize].clone()); // this pointer
 
                             for _ in 0..narg {
                                 let x = self.stack.borrow_mut().pop().unwrap();
@@ -50,7 +49,25 @@ impl Object for Frame_ty {
                             }
                             return obj.call(method, params, env, globals);
                         },
-                        inst => { interprete(&inst, &mut scratch, &self.stack, env, globals); }
+                        &SCode::CALLG(recv, ref method, narg) => {
+                            let ref obj = globals[recv as usize].clone();
+
+                            let mut params = Vec::new();
+                            params.push(globals[recv as usize].clone()); // this pointer
+
+                            for _ in 0..narg {
+                                let x = self.stack.borrow_mut().pop().unwrap();
+                                params.push(x.clone());
+                            }
+                            return obj.call(method, params, env, globals);
+                        },
+                        &SCode::RET => {
+                            return self.stack.borrow_mut().pop().unwrap();
+                        },
+                        &SCode::PUSHSELF => {
+                            self.stack.borrow_mut().push(args[0].clone());
+                        },
+                        inst => { interprete(&inst, &mut locals, &self.stack, env, globals); }
                     }
                 }
 

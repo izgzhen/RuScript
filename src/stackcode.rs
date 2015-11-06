@@ -11,16 +11,19 @@ pub enum SCode {
     POPG(Integer),
     ADD,
     CALLL(Integer, Gc<String>, Integer),
+
     CALLG(Integer, Gc<String>, Integer),
     RET,
     NEW(Integer),
     PUSH_INT(Integer),
     PUSH_STR(Gc<String>),
+
     FRMEND,
     CLASS(Integer, Integer),
     PRINT,
     POPL(Integer),
-    POPA(Integer),
+
+
     PUSHA(Integer),
     PUSHSELF,
     PUSHASTR(Gc<String>),
@@ -55,7 +58,6 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         10 => CLASS(operands[0], operands[1]),
         11 => PRINT,
         12 => POPL(operands[0]),
-        13 => POPA(operands[0]),
         14 => PUSHA(operands[0]),
         15 => PUSHSELF,
         16 => PUSHASTR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),

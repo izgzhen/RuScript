@@ -3,7 +3,7 @@ module Serialize where
 import Data.Word (Word8, Word32)
 import Data.Binary
 import Control.Monad
-import Compiler(SCode(..))
+import SCode
 import Data.ByteString.UTF8 (fromString)
 import Data.ByteString (unpack)
 import Data.List.Split (chunksOf)
@@ -40,7 +40,6 @@ serialize SFrameEnd      = segify 9 []
 serialize (SClass i1 i2) = segify 10 [i1, i2]
 serialize SPrint         = segify 11 []
 serialize (SPopL i)      = segify 12 [i]
-serialize (SPopA i)      = segify 13 [i]
 serialize (SPushA i)     = segify 14 [i]
 serialize SPushSelf      = segify 15 []
 serialize (SPushAStr s)  = Segment (fromIntegral 16) $ strToWord32Arr s
