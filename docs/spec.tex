@@ -49,7 +49,7 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
-\setcounter{secnumdepth}{3}
+\setcounter{secnumdepth}{10}
 
 \numberwithin{equation}{section}
 \numberwithin{figure}{section}
@@ -59,7 +59,7 @@
 
 
 \title{Specification of RuScript}
-\date{\today \\ Draft v1.0}
+\date{\today \\ Draft v2.0}
 \author{Zhen Zhang \\ Find me on GitHub \href{https://github.com/izgzhen}{@izgzhen}}
 
 \begin{document}
@@ -568,4 +568,117 @@ since
 so $$\langle (L, G, C, S), \Sigma_1 + \Sigma_2\rangle, \omega_1 \sim t_1, \omega_2 \sim t_2 \Rightarrow (L, G, C, \omega_2 \rhd \omega_1 \rhd S)$$
 then $$\langle (L, G, C, S), \Sigma_1 + \Sigma_2 + SAdd\rangle, \omega_3 \sim (t_1 + t_2) \Rightarrow (L, G, C, \omega_3 \rhd S)$$
 which conforms to the spec.
+
+\section{High-Level Language Construct}\label{high-level-language-construct}
+
+\subsection{Symbols}\label{symbols}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Statement: $S$
+\item
+  Expression: $E$
+\item
+  Self: $self$
+\item
+  Identifier (not a keyword): $Id$
+\item
+  Assignment: $x \mapsto e$, $x \in V, e \in E$
+\item
+  Term: $T$
+\item
+  (real) parameter list: $\forall e_i \in E, (e_0, e_1, ...)$
+\item
+  (formal) arguments list: $\forall x_i \in Id, (x_0, x_1, ...)$
+\item
+  Class: $C$
+\item
+  Method invoking:
+  $\forall c \in C, e_i \in E, f \in Id, c.f(e_0, e_1, ...) \in T$
+\item
+  Attribute accessing: $\forall c \in C, \alpha \in Id, c.\alpha \in T$
+\item
+  Print: $\forall e \in E, print(e) \in S$
+\item
+  Return: $\forall e \in E, return(e) \in S$
+\item
+  Plus: $\forall t_0, t_1 \in T, t_0 + t_1 \in E$
+\item
+  Declared \texttt{global} names: $x_g \in X_g$
+\item
+  Locally defined names: $x_L \in X_L$
+\item
+  Globally defined names: $x_G \in X_G$
+\item
+  Integer $i \in \mathbb Z$
+\item
+  String $s \in \mathbb S$
+\item
+  Construction $\forall c \in C, new(c) \in T$
+\end{itemize}
+
+\subsection{Semantics}\label{semantics}
+
+\paragraph{Assigment}\label{assigment}
+
+\[\frac{x \in X_g, SC_G(x) = i, \omega \sim e}
+        {F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L, G[i \mapsto \omega]), C, S)}\]
+
+\[\frac{x \in X_L, SC_L(x) = i, \omega \sim e}
+        {F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L[i \mapsto \omega], G, C, S)}\]
+
+\[\frac{x \in X_G, SC_G(x) = i, \omega \sim e}
+        {F_0@\langle (\emptyset, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (\emptyset, G[i \mapsto \omega], C, S)}\]
+
+\paragraph{Expression \& Term
+evaluation}\label{expression-term-evaluation}
+
+\[\frac{t_0 \sim \omega_0, t_1 \sim \omega_1, e = t_0 + t_1}
+        {e \sim \omega_0 + \omega_1}\]
+
+\[\frac{\langle(L, G, C, S), Compile(push(t)) \rangle \Rightarrow (L, G, C, \omega \rhd S)}
+        {t \sim \omega}\]
+
+\[\frac{x \in X_{g|L|G}, SC_{G|L}(x) = i, G|L[i] = \omega}{x \sim_{G|L} \omega}\]
+
+\[\frac{prim \in \mathbb{Z|S}, prim \sim \omega}
+        {\langle S, Compile(push(prim)) \rangle \Rightarrow (\omega \rhd S)}\]
+
+\[\frac{c \in C, \omega = New(c)}
+        {\langle S, Compile(push(new(c))) \rangle \Rightarrow (\omega \rhd S)}\]
+
+\[\frac{x \in Id, x \sim \omega}
+        {\langle S, Compile(push(x)) \rangle \Rightarrow (\omega \rhd S)}\]
+
+\[\frac{x \sim \omega_x, ClassOf(\omega_x) = c,  e_i \sim \omega_i, f_{run}(c.f, [\omega_i]) \sim \omega}
+        {\langle S, Compile(push(x.f([e_i]))) \rangle \Rightarrow (\omega \rhd S)}\]
+
+\[\frac{x \sim \omega_x, ClassOf(\omega_x) = c, i = FindIndex(\alpha, c.attrs), \omega_x.attrs[i] = \omega }
+        {\langle (C, S), Compile(push(x.\alpha)) \rangle \Rightarrow (\omega \rhd S)}\]
+
+\paragraph{Equivalence}\label{equivalence}
+
+$L \Rightarrow L'$ can be \emph{equivalently} written as
+$L \Rightarrow L$ iff.
+$\forall x \in X_{L}, x \sim_L \omega, x \in X_{L'} \cap x \sim_{L'} \omega$.
+Same for $G$. $S$ must be completely equivalent.
+
+And to make notation less cluttered, when $L, S, C, G$ is not referenced
+and equivalent under interpretation, we can neglect them in the
+expression.
+
+\paragraph{Misc}\label{misc}
+
+\[\frac{cb_1, cb_2 \in [S], \langle E, Compile(cb_1) \rangle \Rightarrow E', \langle E', Compile(s_2) \rangle \Rightarrow E''}
+       {\langle E, Compile(cb_1 + cb_2) \rangle \Rightarrow E''}\]
+
+\begin{gather*} F_0 \diamond ... \diamond F_i @\langle(L_i, G, C, S_i) , Susp \rangle \diamond \langle ([\omega_0, \omega_1, ..., void, ...], G, C, empty\_stack) , f \rangle \\ \Downarrow \\ F_0 \diamond ... \diamond F_i \diamond \langle (L, G, C, \omega \rhd S) RET \rangle \\ \line(1,0){250} \\f_{run}(f, [\omega_i]) \sim \omega
+\end{gather*}
+
+
+XXX: We should move ``G'' to a really global place \ldots{} coming up
+with good notation is hard for me.
+
+
 \end{document}

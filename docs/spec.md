@@ -1,6 +1,6 @@
 # Specification of RuScript
 
-- Version: Draft v0.1
+- Version: Draft v0.2
 - Zhen Zhang
 - Nov. 2015
 
@@ -266,6 +266,83 @@ So, let $\Sigma_1 \leftarrow f_{term}(t_1), \Sigma_2 \leftarrow f_{term}(t_2)$, 
 
 
 
+## High-Level Language Construct
+Built on top of the foundation, we can compile the grammar mentioned at the very beginning to the stack code. Here, I will give a formal, detailed description of each construct we have. The semantics will be defined here, although implementation is left up to the compiler writer.
+
+### Symbols
+* Statement: $S$
+* Expression: $E$
+* Self: $self$
+* Identifier (not a keyword): $Id$
+* Assignment: $x \mapsto e$, $x \in V, e \in E$
+* Term: $T$
+* (real) parameter list: $\forall e_i \in E, (e_0, e_1, ...)$
+* (formal) arguments list: $\forall x_i \in Id, (x_0, x_1, ...)$
+* Class: $C$
+* Method invoking: $\forall c \in C, e_i \in E, f \in Id, c.f(e_0, e_1, ...) \in T$
+* Attribute accessing: $\forall c \in C, \alpha \in Id, c.\alpha \in T$
+* Print: $\forall e \in E, print(e) \in S$
+* Return: $\forall e \in E, return(e) \in S$
+* Plus: $\forall t_0, t_1 \in T, t_0 + t_1 \in E$
+* Declared `global` names: $x_g \in X_g$
+* Locally defined names: $x_L \in X_L$
+* Globally defined names: $x_G \in X_G$
+* Integer $i \in \mathbb Z$
+* String $s \in \mathbb S$
+* Construction $\forall c \in C, new(c) \in T$
+
+
+### Semantics
+#### Assigment
+$$\frac{x \in X_g, SC_G(x) = i, \omega \sim e}
+		{F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L, G[i \mapsto \omega]), C, S)}$$
+
+
+$$\frac{x \in X_L, SC_L(x) = i, \omega \sim e}
+		{F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L[i \mapsto \omega], G, C, S)}$$
+
+$$\frac{x \in X_G, SC_G(x) = i, \omega \sim e}
+		{F_0@\langle (\emptyset, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (\emptyset, G[i \mapsto \omega], C, S)}$$
+
+
+#### Expression & Term evaluation
+$$\frac{t_0 \sim \omega_0, t_1 \sim \omega_1, e = t_0 + t_1}
+		{e \sim \omega_0 + \omega_1}$$
+
+$$\frac{\langle(L, G, C, S), Compile(push(t)) \rangle \Rightarrow (L, G, C, \omega \rhd S)}
+	    {t \sim \omega}$$
+
+$$\frac{x \in X_{g|L|G}, SC_{G|L}(x) = i, G|L[i] = \omega}{x \sim_{G|L} \omega}$$
+
+$$\frac{prim \in \mathbb{Z|S}, prim \sim \omega}
+	    {\langle S, Compile(push(prim)) \rangle \Rightarrow (\omega \rhd S)}$$
+
+$$\frac{c \in C, \omega = New(c)}
+	    {\langle S, Compile(push(new(c))) \rangle \Rightarrow (\omega \rhd S)}$$
+
+$$\frac{x \in Id, x \sim \omega}
+	    {\langle S, Compile(push(x)) \rangle \Rightarrow (\omega \rhd S)}$$
+
+$$\frac{x \sim \omega_x, ClassOf(\omega_x) = c,  e_i \sim \omega_i, f_{run}(c.f, [\omega_i]) \sim \omega}
+	    {\langle S, Compile(push(x.f([e_i]))) \rangle \Rightarrow (\omega \rhd S)}$$
+
+$$\frac{x \sim \omega_x, ClassOf(\omega_x) = c, i = FindIndex(\alpha, c.attrs), \omega_x.attrs[i] = \omega }
+	    {\langle (C, S), Compile(push(x.\alpha)) \rangle \Rightarrow (\omega \rhd S)}$$
+
+
+#### Equivalence
+$L \Rightarrow L'$ can be *equivalently* written as $L \Rightarrow L$ iff. $\forall x \in X_{L}, x \sim_L \omega, x \in X_{L'} \cap x \sim_{L'} \omega$. Same for $G$. $S$ must be completely equivalent.
+
+And to make notation less cluttered, when $L, S, C, G$ is not referenced and equivalent under interpretation, we can neglect them in the expression.
+
+
+#### Misc
+$$\frac{cb_1, cb_2 \in [S], \langle E, Compile(cb_1) \rangle \Rightarrow E', \langle E', Compile(s_2) \rangle \Rightarrow E''}
+	   {\langle E, Compile(cb_1 + cb_2) \rangle \Rightarrow E''}$$
+
+
+$$\frac{ F_0 \diamond ... \diamond F_i @\langle(L_i, G, C, S_i) , Susp \rangle \diamond \langle ([\omega_0, \omega_1, ..., void, ...], G, C, empty\_stack) , f \rangle \Longrightarrow F_0 \diamond ... \diamond F_i \diamond \langle (L, G, C, \omega \rhd S) RET \rangle}{f_{run}(f, [\omega_i]) \sim \omega}$$
 
 
 
+XXX: We should move "G" to a really global place ... coming up with good notation is hard for me.
