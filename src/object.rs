@@ -43,6 +43,20 @@ impl Object for _Object {
         }
     }
 
+    fn access(&self, name: &str) -> Gc<_Object> {
+        match self {
+            &Its(ref itsty) => itsty.access(name),
+            _ => access_fail(&self.tyof(), name)
+        }
+    }
+
+    fn access_i(&self, index: usize) -> Gc<_Object> {
+        match self {
+            &Its(ref itsty) => itsty.access_i(index),
+            _ => access_fail(&self.tyof(), index)
+        }
+    }
+
     fn tyof(&self) -> String {
         match self {
             &Int(ref intty) => intty.tyof(),

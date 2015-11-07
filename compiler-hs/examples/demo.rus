@@ -9,6 +9,10 @@ class example {
     }
 };
 
+
+a = 1;
+b = 2;
+
 obj = new example(a, b);
 
 class example2 {
@@ -19,10 +23,8 @@ class example2 {
 };
 
 
-obj2 = new example2;
+obj2 = new example2();
 
-a = 1;
-b = 2;
 
 c = obj2.bridge(); # c should be 3
 print c;

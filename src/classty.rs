@@ -151,6 +151,7 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 
 pub trait Object {
     fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>, &mut Vec<Gc<_Object>>) -> Gc<_Object>;
+
     fn access(&self, name: &str) -> Gc<_Object> {
         access_fail(&self.tyof(), name)
     }
