@@ -2,17 +2,19 @@
 
 
 class example {
-    fn add(self, u, v) {
-        return u + v;
+    a;
+    b;
+    fn add(self) {
+        return self.a + self.b;
     }
 };
 
-obj = new example;
+obj = new example(a, b);
 
 class example2 {
-    fn bridge(self, x, y) {
+    fn bridge(self) {
         global obj;
-        return obj.add(x, y);
+        return obj.add();
     }
 };
 
@@ -22,7 +24,7 @@ obj2 = new example2;
 a = 1;
 b = 2;
 
-c = obj2.bridge(a, b); # c should be 3
+c = obj2.bridge(); # c should be 3
 print c;
 
 

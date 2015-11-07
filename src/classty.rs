@@ -18,8 +18,8 @@ pub struct Method_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Class_ty {
-    methods : Vec<Method_ty>,
-    attrs   : Vec<Gc<String>>,
+    methods   : Vec<Method_ty>,
+    attr_names : Vec<Gc<String>>,
 }
 
 impl Object for Class_ty {
@@ -40,9 +40,8 @@ impl Object for Class_ty {
 #[allow(non_camel_case_types)]
 #[derive(Trace)]
 pub struct Instance_ty {
-    // env     : Gc<Env>,
-    parent  : Gc<Class_ty>,
-    locals  : Vec<Gc<_Object>>,
+    parent : Gc<Class_ty>,
+    attrs  : Vec<Gc<_Object>>,
 }
 
 impl Object for Instance_ty {
@@ -57,17 +56,23 @@ impl Object for Instance_ty {
         call_fail("Instance_ty", name)
     }
 
+    fn access(&self, name: &str) -> Gc<_Object> {
+        for i in 0..self.parent.attr_names.len() {
+            if *self.parent.attr_names[i] == name.to_string() {
+                return self.attrs[i].clone();
+            }
+        }
+
+        Gc::new(Non)
+    }
+
+    fn access_i(&self, index: usize) -> Gc<_Object> {
+        self.attrs[index].clone()
+    }
+
     fn tyof(&self) -> String {
         "<instance>".to_string()
     }
-}
-
-pub fn __new__(class : Gc<Class_ty>, _: Gc<Env>) -> Gc<_Object> {
-    Gc::new(_Object::Its(Instance_ty{
-        // env    : env.clone(),
-        parent : class.clone(),
-        locals : Vec::new(),
-    }))
 }
 
 // Environment
@@ -77,11 +82,10 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn __new__(&self, x : usize) -> Gc<_Object> {
+    pub fn __new__(&self, x : usize, params: &Vec<Gc<_Object>>) -> Gc<_Object> {
         Gc::new(_Object::Its(Instance_ty{
-            // env    : env.clone(),
             parent : self.classes[x].clone(),
-            locals : Vec::new(),
+            attrs  : params.clone(),
         }))
     }
 }
@@ -138,8 +142,8 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 
     (Gc::new(Class_ty {
                 // name : Gc::new(name.to_string()),
-                methods : methods,
-                attrs   : attrs,
+                methods   : methods,
+                attr_names : attrs,
             }) , pc)
 }
 

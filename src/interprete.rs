@@ -35,8 +35,12 @@ pub fn interprete(inst: &SCode,
             let ret = a1.call("add", vec![a1.clone(), a2], env, globals);
             stack.borrow_mut().push(ret);
         },
-        &NEW(x) => {
-            let obj = env.__new__(x as usize);
+        &NEW(x, n) => {
+            let mut params = Vec::new();
+            for _ in 0..n {
+                params.push(stack.borrow_mut().pop().unwrap());
+            }
+            let obj = env.__new__(x as usize, &params);
             stack.borrow_mut().push(obj);
         },
         &PUSH_INT(i) => {

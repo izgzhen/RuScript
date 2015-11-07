@@ -14,7 +14,7 @@ pub enum SCode {
 
     CALLG(Integer, Gc<String>, Integer),
     RET,
-    NEW(Integer),
+    NEW(Integer, Integer),
     PUSH_INT(Integer),
     PUSH_STR(Gc<String>),
 
@@ -51,7 +51,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
         3 => ADD,
         4 => CALLL(operands[0], read_string(bytes[pos + 10 .. pos + size + 1].to_vec()), operands[1]),
         5 => RET,
-        6 => NEW(operands[0]),
+        6 => NEW(operands[0], operands[1]),
         7 => PUSH_INT(operands[0] as Integer),
         8 => PUSH_STR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
         9 => FRMEND,

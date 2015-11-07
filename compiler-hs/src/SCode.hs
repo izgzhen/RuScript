@@ -7,7 +7,7 @@ data SCode = SPushL Int
            | SCallL Int String Int
            | SCallG Int String Int
            | SRet
-           | SNew Int
+           | SNew Int Int
            | SPushInt Int
            | SPushStr String
            | SFrameEnd

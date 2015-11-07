@@ -108,9 +108,15 @@ pushTerm tm = case tm of
     TVar x    -> pushVar x
     TLitInt i -> emit $ SPushInt i
     TLitStr s -> emit $ SPushStr s
-    TNew className -> readClass className new
-    TCall call  -> compileCall call
+    TNew new    -> compileNew    new
+    TCall call  -> compileCall   call
     TAccess acc -> compileAccess acc
+
+compileNew :: New -> Compiler ()
+compileNew (New className params) = readClass className $ \i -> do
+    mapM_ pushExpr params
+    new i $ length params
+  
 
 compileCall :: Call -> Compiler ()
 compileCall (Call "self" method params) = inClass $ \cs -> do
@@ -152,8 +158,8 @@ call scoped m narg = case scoped of
       L i -> emit $ SCallL i m narg
       _   -> error "can't call on attributes now"
 
-new :: ClassId -> Compiler ()
-new (ClassId i) = emit $ SNew i
+new :: ClassId -> Int -> Compiler ()
+new (ClassId i) n = emit $ SNew i n
 
 -- Register Allocator
 
