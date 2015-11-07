@@ -44,6 +44,9 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
         });
 
     for inst in top_level_code {
+        println!("interpreting: {:?}", inst);
+
+
         match inst {
             &SCode::CALLL(_, _, _) => {
                 assert!(false, "can't call local object on top-level!");
@@ -52,6 +55,7 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
                 let ref obj = globals[recv as usize].clone();
 
                 let mut params = Vec::new();
+                params.push(globals[recv as usize].clone()); // this pointer
 
                 for _ in 0..narg {
                     let x = stack.borrow_mut().pop().unwrap();
@@ -65,6 +69,13 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
             },
             inst => interprete(inst, &mut locals, &stack, &env, &mut globals)
         }
+
+        print!("stack size: {:?}, content: ", stack.borrow().len());
+        for x in stack.borrow().iter() {
+            print!("{} ", x.tyof());
+        }
+        println!("");
+
     }
  
 }

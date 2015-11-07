@@ -2,15 +2,15 @@
 
 
 class example {
-    fn add(a, b) {
-        return a + b;
+    fn add(self, u, v) {
+        return u + v;
     }
 };
 
 obj = new example;
 
 class example2 {
-    fn bridge(x, y) {
+    fn bridge(self, x, y) {
         global obj;
         return obj.add(x, y);
     }

@@ -14,8 +14,6 @@ pub fn interprete(inst: &SCode,
                   env: &Gc<Env>,
                   globals: &mut Vec<Gc<_Object>>) {
 
-    println!("interpreting: {:?}", inst);
-
     match inst {
         &PUSHL(x) => {
             stack.borrow_mut().push(locals[x as usize].clone());
@@ -34,7 +32,7 @@ pub fn interprete(inst: &SCode,
         &ADD => {
             let a1 = stack.borrow_mut().pop().unwrap();
             let a2 = stack.borrow_mut().pop().unwrap();
-            let ret = a1.call("add", vec![a2], env, globals);
+            let ret = a1.call("add", vec![a2, a1.clone()], env, globals);
             stack.borrow_mut().push(ret);
         },
         &NEW(x) => {
@@ -51,7 +49,7 @@ pub fn interprete(inst: &SCode,
         },
         &PRINT => {
             let x = stack.borrow_mut().pop().unwrap();
-            x.call("__print__", vec![], env, globals);
+            x.call("__print__", vec![x.clone()], env, globals);
         },
         &POPL(x) => {
             let i = x as usize;

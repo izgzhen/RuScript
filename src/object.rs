@@ -43,7 +43,7 @@ impl Object for _Object {
         }
     }
 
-    fn tyof(&self) -> &str {
+    fn tyof(&self) -> String {
         match self {
             &Int(ref intty) => intty.tyof(),
             &Arr(ref arrty) => arrty.tyof(),
@@ -51,7 +51,7 @@ impl Object for _Object {
             &Frm(ref frmty) => frmty.tyof(),
             &Cls(ref clsty) => clsty.tyof(),
             &Its(ref itsty) => itsty.tyof(),
-            &Non => { "<None>" },
+            &Non => { "<None>".to_string() },
         }
     }
 }

@@ -30,7 +30,7 @@ impl Object for Int_ty {
     fn call(&self, name : &str, args: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "add" => {
-                let ref b = *args[0];
+                let ref b = *args[1];
                 match b {
                     &Int(ref intty) => Int_ty::new(self._i + intty._i),
                     o => {
@@ -47,7 +47,7 @@ impl Object for Int_ty {
         }
     }
 
-    fn tyof(&self) -> &str { "<int>" }
+    fn tyof(&self) -> String { format!("<int>({})", self._i) }
 }
 
 
@@ -71,7 +71,7 @@ impl Object for Array_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>, _ : &Gc<Env>, _: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "at" =>  {
-                let ref n = *args[0];
+                let ref n = *args[1];
                 match n {
                     &Int(ref intty) => { 
                         let i = intty._i as usize;
@@ -85,8 +85,8 @@ impl Object for Array_ty {
                 }
             },
             "push" => {
-                for arg in args {
-                    self.vector.borrow_mut().push(arg.clone());
+                for i in 1..args.len() {
+                    self.vector.borrow_mut().push(args[i].clone());
                 }
 
                 Gc::new(Non)
@@ -95,7 +95,7 @@ impl Object for Array_ty {
         }
     }
 
-    fn tyof(&self) -> &str { "<array>" }
+    fn tyof(&self) -> String { "<array>".to_string() }
 }
 
 
@@ -125,5 +125,5 @@ impl Object for String_ty {
         }
     }
 
-    fn tyof(&self) -> &str { "<string>" }
+    fn tyof(&self) -> String { format!("<string>({})", *self.string) }
 }

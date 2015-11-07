@@ -36,6 +36,7 @@ impl Object for Frame_ty {
                     for o in &args {
                         locals.push(o.clone());
                     }
+                    println!("interpreting: {:?}", inst);
                     match inst {
                         &SCode::CALLL(recv, ref method, narg) => {
                             let ref obj = locals[recv as usize].clone();
@@ -69,6 +70,13 @@ impl Object for Frame_ty {
                         },
                         inst => { interprete(&inst, &mut locals, &self.stack, env, globals); }
                     }
+
+                    print!("stack size: {:?}, content: ", self.stack.borrow().len());
+                    for x in self.stack.borrow().iter() {
+                        print!("{} ", x.tyof());
+                    }
+                    println!("");
+
                 }
 
                 Gc::new(Non)
@@ -80,5 +88,5 @@ impl Object for Frame_ty {
         }
     }
 
-    fn tyof(&self) -> &str { "<frame>" }
+    fn tyof(&self) -> String { "<frame>".to_string() }
 }

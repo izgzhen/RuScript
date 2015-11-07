@@ -30,7 +30,7 @@ impl Object for Class_ty {
         }
     }
 
-    fn tyof(&self) -> &str { "<class>" }
+    fn tyof(&self) -> String { "<class>".to_string() }
 }
 
 
@@ -57,8 +57,8 @@ impl Object for Instance_ty {
         call_fail("Instance_ty", name)
     }
 
-    fn tyof(&self) -> &str {
-        "<instance>"
+    fn tyof(&self) -> String {
+        "<instance>".to_string()
     }
 }
 
@@ -148,14 +148,14 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
 pub trait Object {
     fn call(&self, &str, Vec<Gc<_Object>>, &Gc<Env>, &mut Vec<Gc<_Object>>) -> Gc<_Object>;
     fn access(&self, name: &str) -> Gc<_Object> {
-        access_fail(self.tyof(), name)
+        access_fail(&self.tyof(), name)
     }
 
     fn access_i(&self, index: usize) -> Gc<_Object> {
-        access_fail(self.tyof(), index)
+        access_fail(&self.tyof(), index)
     }
 
-    fn tyof(&self) -> &str;
+    fn tyof(&self) -> String;
 }
 
 pub fn call_fail(ty: &str, name: &str) -> Gc<_Object> {
