@@ -59,7 +59,7 @@
 
 
 \title{Specification of RuScript}
-\date{\today \\ Draft v2.0}
+\date{\today \\ v0.2.0}
 \author{Zhen Zhang \\ Find me on GitHub \href{https://github.com/izgzhen}{@izgzhen}}
 
 \begin{document}
@@ -84,7 +84,7 @@ composed of:
 \def\labelenumi{\arabic{enumi}.}
 \itemsep1pt\parskip0pt\parsep0pt
 \item
-  Local Stack (abbr. \emph{stack})
+  Local stack (abbr. \emph{stack})
 \item
   Local registers (abbr. \emph{locals})
 \item
@@ -104,93 +104,6 @@ Stack can only be pushed or popped. It is assumed to
 be unlimited in size. And if stack underflowed, program will
 panic. Registers is an array of finite and fixed length. When the index is
 invalid, program will panic.
-
-\subsection{Code Structure}\label{code-structure}
-
-\paragraph{The grammar}\label{the-grammar}
-
-\begin{verbatim}
-<toplevel>      := [<statement>;]
-
-<assignment>    := <identifier> = <expr>
-
-<expr>          := <term> + <term>
-                 | <term>
-
-<term>          := <int>
-                 | <ident>
-                 | <string>
-                 | new <ident>
-                 | <ident>.<ident>([<expr>,])
-
-<statement>     := <assignment>
-                 | <classDecl>
-                 | print <expr>
-                 | return <expr>
-
-<classDecl>     := class <ident> { [ <attrDecl> | <methodDecl> ] }
-
-<attrDecl>      := <ident>
-
-<methodDecl>    := fn <ident>([<ident>,]) {
-                            [<globalDecl>]
-                            [<statments>]
-                        }
-
-<globalDecl>    := global <ident>
-\end{verbatim}
-
-Note \#1: When we say ``\emph{A is defined in scope X}'',
-
-\begin{itemize}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  If A is a variable, we mean that there exists an assignment
-  \texttt{A = \textless{}expr\textgreater{}} in X
-\item
-  If A is a method, we mean that A is defined in some class as a method
-\item
-  If A is a class, we mean that A is defined in some top-level
-  statement
-\end{itemize}
-
-Note \#2: By ``\emph{variable}'', we mean named primitive objects or
-instances
-
-\subsection{Scope and Scoping}\label{scope-and-scoping}
-
-Kinds of scope:
-
-\begin{itemize}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  Global (or top-level) scope: contains defined variables, classes
-\item
-  Local (or method) scope: contains arguments, declared globals,
-  variable defined in method source
-\item
-  Class scope: contains only and always \texttt{self}. \texttt{self} can be used
-  to refer the being-defined class's attributes and methods with common accessor
-  pattern.
-\end{itemize}
-
-Scoping rules:
-
-\begin{itemize}
-\itemsep1pt\parskip0pt\parsep0pt
-\item
-  Globals: Visible to top-level code after it is defined on top-level;
-  Visible to method code after it is defined on top-level and declared
-  as \texttt{global} at the beginning of method.
-\item
-  Locals: Only visible to method's code
-\item
-  Classes: Visible after defined
-\end{itemize}
-
-Note: The principle is to give warnings of name collision, and
-give errors when scoping found nothing. If collision happens, the scoping priorities
-are ``local \textgreater{} class \textgreater{} global''.
 
 \subsection{Object System}\label{object-system}
 
@@ -314,11 +227,11 @@ of \texttt{X}.
 \item
   Environment: $E$, tuple $(L, G, S, C)$
 \item
-  Locals: $L$, mutable finite array
+  Locals: $L$, mutable finite array of object pointer
 \item
-  Globals: $G$, mutable finite array
+  Globals: $G$, mutable finite array of object pointer
 \item
-  Stack: $S$, mutable infinite stack
+  Stack: $S$, mutable infinite stack of object pointer
 \item
   Classes: $C$, immutable array of class definitions
 \item
@@ -326,17 +239,13 @@ of \texttt{X}.
 \item
   Instruction Space: $I$, set of defined instructions
 \item
-  Frame: $F$, tuple $(\Sigma, E)$
+  Frame: $F$, root frame $F_0$ owns $F, S_0$ and refers to $C$, child frame $F_{>0}$ owns $L_i, S_i$ and refers to $G, C$
 \item
-  Object: $\omega$, any entity satisfying \texttt{Object} trait
+  Object: $\omega$, any entity satisfying \texttt{Object} trait. Depends on the context, we can refer to either object itself or managed pointer pointed to it
 \item
   Heap: $H$, set of managed objects
 \item
-  Pointer: $\psi$, a managed reference to some $\omega \in H$
-\item
-  Program: $P$, tuple of $(C, \Sigma)$
-\item
-  Identifier Space: $\eta$
+  Program: $P$, tuple of $(C, \Sigma_{top})$
 \item
   Expression: $e$
 \end{itemize}
@@ -399,92 +308,96 @@ everything into the formal presentation.
 
 \subsection{Formal Semantics}\label{formal-semantics}
 
+Note: To make notation less cluttered, when $L, S, C, G$ is not referenced
+and equivalent under interpretation, we can neglect them in the
+expression.
+
 \paragraph{\texttt{PUSHG(Integer)}}\label{pushginteger}
 
 \begin{gather*}
-  \langle (L, G, C, S), PUSHG(i)\rangle \Rightarrow WorldM (L, G, C, G[i] \rhd S )\\
+  \langle S, PUSHG(i)\rangle \Rightarrow WorldM (G[i] \rhd S)\\
   WorldM \leadsto H[G[i]] \uparrow
 \end{gather*}
 
 \paragraph{\texttt{PUSHL(Integer)}}\label{pushlinteger}
 
 \begin{gather*}
-  \langle (L, G, C, S), PUSHL(i)\rangle \Rightarrow WorldM (L, G, C, L[i] \rhd S )\\
+  \langle S, PUSHL(i)\rangle \Rightarrow WorldM (L[i] \rhd S )\\
   WorldM \leadsto H[L[i]] \uparrow
 \end{gather*}
 
 \paragraph{\texttt{PUSHA(Integer)}}\label{pushainteger}
 
 \begin{gather*}
-  \langle (L, G, C, S@(\omega \rhd S')), PUSHA(i)\rangle \Rightarrow WorldM (L, G, C, \omega.attrs[i] \rhd S )\\
+  \langle S@(\omega \rhd S'), PUSHA(i)\rangle \Rightarrow WorldM (\omega.attrs[i] \rhd S )\\
   WorldM \leadsto H[\omega] \uparrow
 \end{gather*}
 
 \paragraph{\texttt{POPG(Integer)}}\label{popginteger}
 
 \begin{gather*}
-  \langle (L, G, C, \omega \rhd S'), POPG(i)\rangle \Rightarrow WorldM (L, subst(G, i, \omega), C, S' )\\
+  \langle (G, \omega \rhd S'), POPG(i)\rangle \Rightarrow WorldM (subst(G, i, \omega), S' )\\
   WorldM \leadsto H[G[i]] \downarrow
 \end{gather*}
 
 \paragraph{\texttt{POPL(Integer)}}\label{poplinteger}
 
 \begin{gather*}
-  \langle (L, G, C, \omega \rhd S'), POPL(i)\rangle \Rightarrow WorldM (subst(L, i, \omega), G, C, S' )\\
+  \langle (L, \omega \rhd S'), POPL(i)\rangle \Rightarrow WorldM (subst(L, i, \omega), S' )\\
   WorldM \leadsto H[L[i]] \downarrow
 \end{gather*}
 
 \paragraph{\texttt{POPA(Integer)}}\label{popainteger}
 
 \begin{gather*}
-  \langle (L, G, C, \omega_1 \rhd \omega_2 \rhd S'), POPA(i)\rangle \Rightarrow WorldM (L, G, C, subst(\omega_2, i, \omega_1) \rhd S' )\\
+  \langle (\omega_1 \rhd \omega_2 \rhd S'), POPA(i)\rangle \Rightarrow WorldM (subst(\omega_2, i, \omega_1) \rhd S' )\\
   WorldM \leadsto H[\omega_2.attrs[i]] \downarrow
 \end{gather*}
 
 \paragraph{\texttt{ADD}}\label{add}
 
 \begin{gather*}
-  \langle (L, G, C, \omega_1 \rhd \omega_2 \rhd S'), ADD\rangle, \omega_3 \sim \omega_1 + \omega_2 \Rightarrow WorldM (L, G, C, \omega_3 \rhd S')\\
+  \langle (\omega_1 \rhd \omega_2 \rhd S'), ADD\rangle, \omega_3 \sim \omega_1 + \omega_2 \Rightarrow WorldM (\omega_3 \rhd S')\\
   WorldM \leadsto H[\omega_1] \downarrow, H[\omega_2] \downarrow, H.new(\omega_3)
 \end{gather*}
 
-\paragraph{\texttt{CALL(Integer, String, Integer)}}\label{callinteger-string-integer}
+\paragraph{\texttt{CALL(L|G)(Integer, String, Integer)}}\label{callinteger-string-integer}
 
 \begin{gather*}
   \begin{rcases}
-    \langle (L, G, C, \omega_1 \rhd \omega_2 \rhd ... \omega_n \rhd S'), CALL(i, m, n)\rangle\\
+    \langle (L, G, \omega_1 \rhd \omega_2 \rhd ... \omega_n \rhd S'), CALL(i, m, n)\rangle\\
     \omega \leftarrow scope(L + G, i), \omega.m(\omega_1, ..., \omega_n) \sim \omega'
   \end{rcases}
   \quad
-    \Rightarrow WorldM (L, G, C, \omega' \rhd S' )\\
+    \Rightarrow WorldM (L, G, \omega' \rhd S' )\\
   WorldM \leadsto \forall i \in 1...n, H[\omega_i] \downarrow, H.new(\omega')
 \end{gather*}
 
 \paragraph{\texttt{RET}}\label{ret}
 
 \begin{gather*}
-  F_0@\langle (L, G, C, \omega \rhd S'), RET\rangle \Rightarrow terminate \\
-  F_0 \diamond ... \diamond F_{i - 1}@(Susp: \omega \rightarrow \langle E, i \rangle)\diamond F_i@\langle (L, G, C, \omega \rhd S'), RET\rangle \Rightarrow F_0 \diamond ... \diamond F_{i-1}@ \langle E, i \rangle
+  F_0@\langle E_0, RET\rangle \Rightarrow terminate \\
+  F_0 \diamond ... \diamond F_{i - 1}@(Susp: \omega \rightarrow \langle E_{i-1}, \sigma \rangle)\diamond F_i@\langle (E_i, \omega \rhd S'), RET\rangle \Rightarrow F_0 \diamond ... \diamond F_{i-1}@ \langle E_{i-1}, \sigma \rangle
 \end{gather*}
 
 \paragraph{\texttt{NEW(Integer)}}\label{newinteger}
 
 \begin{gather*}
-  \langle (L, G, C, S), NEW(i)\rangle, \omega \leftarrow C[i].new() \Rightarrow WorldM (L, G, C, \omega \rhd S)\\
+  \langle (C, S), NEW(i)\rangle, \omega \leftarrow C[i].new() \Rightarrow WorldM (C, \omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
 \paragraph{\texttt{PUSH\_INT(Integer)}}\label{pushux5fintinteger}
 
 \begin{gather*}
-  \langle (L, G, C, S), PUSH\_INT(i)\rangle, \omega \leftarrow Int.new(i) \Rightarrow WorldM (L, G, C, \omega \rhd S)\\
+  \langle S, PUSH\_INT(i)\rangle, \omega \leftarrow Int.new(i) \Rightarrow WorldM (\omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
 \paragraph{\texttt{PUSH\_STR(String)}}\label{pushux5fstrstring}
 
 \begin{gather*}
-  \langle (L, G, C, S), PUSH\_INT(s)\rangle, \omega \leftarrow String.new(s) \Rightarrow WorldM (L, G, C, \omega \rhd S)\\
+  \langle S, PUSH\_INT(s)\rangle, \omega \leftarrow String.new(s) \Rightarrow WorldM (\omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
@@ -499,7 +412,7 @@ This is a pseudo-instruction.
 \paragraph{\texttt{PRINT}}\label{print}
 
 \begin{gather*}
-  \langle (L, G, C, \omega \rhd S), PRINT\rangle \Rightarrow WorldM (L, G, C, \omega \rhd S) \\
+  \langle (\omega \rhd S), PRINT\rangle \Rightarrow WorldM (\omega \rhd S) \\
   WorldM \leadsto B.print(\omega)
 \end{gather*}
 
@@ -570,6 +483,94 @@ then $$\langle (L, G, C, S), \Sigma_1 + \Sigma_2 + SAdd\rangle, \omega_3 \sim (t
 which conforms to the spec.
 
 \section{High-Level Language Construct}\label{high-level-language-construct}
+
+\subsection{Code Structure}\label{code-structure}
+
+\paragraph{The grammar}\label{the-grammar}
+
+\begin{verbatim}
+<toplevel>      := [<statement>;]
+
+<assignment>    := <identifier> = <expr>
+
+<expr>          := <term> + <term>
+                 | <term>
+
+<term>          := <int>
+                 | <ident>
+                 | <string>
+                 | new <ident>
+                 | <ident>.<ident>([<expr>,])
+
+<statement>     := <assignment>
+                 | <classDecl>
+                 | print <expr>
+                 | return <expr>
+
+<classDecl>     := class <ident> { [ <attrDecl> | <methodDecl> ] }
+
+<attrDecl>      := <ident>
+
+<methodDecl>    := fn <ident>([<ident>,]) {
+                            [<globalDecl>]
+                            [<statments>]
+                        }
+
+<globalDecl>    := global <ident>
+\end{verbatim}
+
+Note \#1: When we say ``\emph{A is defined in scope X}'',
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  If A is a variable, we mean that there exists an assignment
+  \texttt{A = \textless{}expr\textgreater{}} in X
+\item
+  If A is a method, we mean that A is defined in some class as a method
+\item
+  If A is a class, we mean that A is defined in some top-level
+  statement
+\end{itemize}
+
+Note \#2: By ``\emph{variable}'', we mean named primitive objects or
+instances
+
+\subsection{Scope and Scoping}\label{scope-and-scoping}
+
+Kinds of scope:
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Global (or top-level) scope: contains defined variables, classes
+\item
+  Local (or method) scope: contains arguments, declared globals,
+  variable defined in method source
+\item
+  Class scope: contains only and always \texttt{self}. \texttt{self} can be used
+  to refer the being-defined class's attributes and methods with common accessor
+  pattern.
+\end{itemize}
+
+Scoping rules:
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Globals: Visible to top-level code after it is defined on top-level;
+  Visible to method code after it is defined on top-level and declared
+  as \texttt{global} at the beginning of method.
+\item
+  Locals: Only visible to method's code
+\item
+  Classes: Visible after defined
+\end{itemize}
+
+Note: The principle is to give warnings of name collision, and
+give errors when scoping found nothing. If collision happens, the scoping priorities
+are ``local \textgreater{} class \textgreater{} global''.
+
 
 \subsection{Symbols}\label{symbols}
 
@@ -664,10 +665,6 @@ $L \Rightarrow L$ iff.
 $\forall x \in X_{L}, x \sim_L \omega, x \in X_{L'} \cap x \sim_{L'} \omega$.
 Same for $G$. $S$ must be completely equivalent.
 
-And to make notation less cluttered, when $L, S, C, G$ is not referenced
-and equivalent under interpretation, we can neglect them in the
-expression.
-
 \paragraph{Misc}\label{misc}
 
 \[\frac{cb_1, cb_2 \in [S], \langle E, Compile(cb_1) \rangle \Rightarrow E', \langle E', Compile(s_2) \rangle \Rightarrow E''}
@@ -675,10 +672,5 @@ expression.
 
 \begin{gather*} F_0 \diamond ... \diamond F_i @\langle(L_i, G, C, S_i) , Susp \rangle \diamond \langle ([\omega_0, \omega_1, ..., void, ...], G, C, empty\_stack) , f \rangle \\ \Downarrow \\ F_0 \diamond ... \diamond F_i \diamond \langle (L, G, C, \omega \rhd S) RET \rangle \\ \line(1,0){250} \\f_{run}(f, [\omega_i]) \sim \omega
 \end{gather*}
-
-
-XXX: We should move ``G'' to a really global place \ldots{} coming up
-with good notation is hard for me.
-
 
 \end{document}
