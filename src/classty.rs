@@ -102,11 +102,12 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
                 attrs.push(s.clone());
                 pc = pc + 1;
             },
-            _ => break
+            _ => {
+                pc = pc + 1;
+                break;
+            }
         }
     }
-
-    pc = pc + 1;
 
 
     let mut cb = Vec::new();
@@ -132,7 +133,7 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
                     _code  : cb.clone(),
                 });
             },
-            _ => { assert!(false); }
+            _ => { assert!(false, "FRMEND must be followed with PUSH_STR"); }
         }
 
         cb = Vec::new();
@@ -141,7 +142,6 @@ pub fn __class_decl__(code: &Vec<SCode>, n_attrs: usize, n_methods: usize, start
     }
 
     (Gc::new(Class_ty {
-                // name : Gc::new(name.to_string()),
                 methods   : methods,
                 attr_names : attrs,
             }) , pc)

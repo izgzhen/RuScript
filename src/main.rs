@@ -35,7 +35,7 @@ fn main() {
                         while pc < code.len() {
                             match code[pc] {
                                 SCode::CLASS(ref nattrs, ref nmtds) => {
-                                    let (class_obj, new_pc) = __class_decl__(&code, *nattrs as usize, *nmtds as usize, pc);
+                                    let (class_obj, new_pc) = __class_decl__(&code, *nattrs as usize, *nmtds as usize, pc + 1);
                                     classes.push(class_obj);
                                     pc = new_pc;
                                 },

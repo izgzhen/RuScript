@@ -30,3 +30,4 @@ c = obj2.bridge(); # c should be 3
 print c;
 
 
+print obj.a; # show be 1

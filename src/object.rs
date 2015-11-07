@@ -37,7 +37,7 @@ impl Object for _Object {
             &Cls(ref clsty) => clsty.call(name, args, env, globals),
             &Its(ref itsty) => itsty.call(name, args, env, globals),
             &Non => {
-                println!("None object is not cllable");
+                println!("None object is not callable");
                 Gc::new(Non)
             },
         }

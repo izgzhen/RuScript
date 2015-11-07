@@ -83,6 +83,7 @@ emitClass :: String -> [String] -> [MethodDecl] -> Compiler ()
 emitClass name attrs methods = do
     void $ addClass name
     emit $ SClass (length attrs) (length methods)
+    tell (map SPushStr attrs)
     let cscope = ClassScope (collectNames attrs)
                             (collectNames $ map getMethodName methods)
     enterClass cscope $ mapM_ emitMethod methods
