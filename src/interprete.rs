@@ -58,7 +58,7 @@ pub fn interprete(inst: &SCode,
         &POPL(x) => {
             let i = x as usize;
             if GLOBAL_MAXSIZE > i {
-               locals[i] = stack.borrow_mut().pop().unwrap(); 
+                locals[i] = stack.borrow_mut().pop().unwrap(); 
             } else {
                 assert!(false, "locals is not as many as {}", i + 1);
             }

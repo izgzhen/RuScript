@@ -45,7 +45,7 @@ pub struct Instance_ty {
 }
 
 impl Object for Instance_ty {
-    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {        
+    fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         for m in self.parent.methods.iter() {
             if (*m._name) == name.to_string() {
                 let frame = Frame_ty::new(Box::new(m._code.clone()), env);

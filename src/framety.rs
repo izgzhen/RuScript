@@ -30,20 +30,23 @@ impl Object for Frame_ty {
     fn call(&self, name: &str, args: Vec<Gc<_Object>>, env: &Gc<Env>, globals: &mut Vec<Gc<_Object>>) -> Gc<_Object> {
         match name {
             "__run__" => {
+                let mut locals = vec![];
+                for o in &args {
+                    locals.push(o.clone());
+                }
+                let void = super::primty::Int_ty::new(0);
+                for _ in args.len()..super::GLOBAL_MAXSIZE {
+                    locals.push(void.clone());
+                }
                 for i in 0..self.codeblock.len() {
                     let ref inst = self.codeblock[i];
-                    let mut locals = vec![];
-                    for o in &args {
-                        locals.push(o.clone());
-                    }
+
                     println!("interpreting: {:?}", inst);
                     match inst {
                         &SCode::CALLL(recv, ref method, narg) => {
                             let ref obj = locals[recv as usize].clone();
-
                             let mut params = Vec::new();
                             params.push(locals[recv as usize].clone()); // this pointer
-
                             for _ in 0..narg {
                                 let x = self.stack.borrow_mut().pop().unwrap();
                                 params.push(x.clone());

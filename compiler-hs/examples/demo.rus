@@ -13,11 +13,11 @@ class example {
 a = 1;
 b = 2;
 
-obj = new example(a, b);
-
 class example2 {
     fn bridge(self) {
-        global obj;
+        global a;
+        global b;
+        obj = new example(a, b);
         return obj.add();
     }
 };
@@ -30,4 +30,4 @@ c = obj2.bridge(); # c should be 3
 print c;
 
 
-print obj.a; # show be 1
+# print obj.a; # show be 1
