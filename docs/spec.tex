@@ -193,11 +193,11 @@ operands.
 \item
   \texttt{POPL(Integer)}
 \item
-  \texttt{POPA(Integer)}
-\item
   \texttt{ADD}
 \item
-  \texttt{CALL(Integer, String, Integer)}
+  \texttt{CALLL(Integer, String, Integer)}
+\item
+  \texttt{CALLG(Integer, String, Integer)}
 \item
   \texttt{RET}
 \item
@@ -212,6 +212,10 @@ operands.
   \texttt{CLASS(Integer, Integer)}
 \item
   \texttt{PRINT}
+\item
+  \texttt{PUSHSELF}
+\item
+  \texttt{PUSHASTR(String)}
 \end{itemize}
 
 Naming conventions: \texttt{G} means global, \texttt{L} means local,
@@ -312,56 +316,59 @@ Note: To make notation less cluttered, when $L, S, C, G$ is not referenced
 and equivalent under interpretation, we can neglect them in the
 expression.
 
-\paragraph{\texttt{PUSHG(Integer)}}\label{pushginteger}
+\begin{quote}
+
+$L \Rightarrow L'$ can be \emph{equivalently} written as
+$L \Rightarrow L$ iff.
+$\forall x \in X_{L}, x \sim_L \omega, x \in X_{L'} \cap x \sim_{L'} \omega$.
+Same for $G$. $S$ must be completely equivalent.
+
+\end{quote}
+
+
+\subsubsection{\texttt{PUSHG(Integer)}}\label{pushginteger}
 
 \begin{gather*}
   \langle S, PUSHG(i)\rangle \Rightarrow WorldM (G[i] \rhd S)\\
   WorldM \leadsto H[G[i]] \uparrow
 \end{gather*}
 
-\paragraph{\texttt{PUSHL(Integer)}}\label{pushlinteger}
+\subsubsection{\texttt{PUSHL(Integer)}}\label{pushlinteger}
 
 \begin{gather*}
   \langle S, PUSHL(i)\rangle \Rightarrow WorldM (L[i] \rhd S )\\
   WorldM \leadsto H[L[i]] \uparrow
 \end{gather*}
 
-\paragraph{\texttt{PUSHA(Integer)}}\label{pushainteger}
+\subsubsection{\texttt{PUSHA(Integer)}}\label{pushainteger}
 
 \begin{gather*}
   \langle S@(\omega \rhd S'), PUSHA(i)\rangle \Rightarrow WorldM (\omega.attrs[i] \rhd S )\\
   WorldM \leadsto H[\omega] \uparrow
 \end{gather*}
 
-\paragraph{\texttt{POPG(Integer)}}\label{popginteger}
+\subsubsection{\texttt{POPG(Integer)}}\label{popginteger}
 
 \begin{gather*}
   \langle (G, \omega \rhd S'), POPG(i)\rangle \Rightarrow WorldM (subst(G, i, \omega), S' )\\
   WorldM \leadsto H[G[i]] \downarrow
 \end{gather*}
 
-\paragraph{\texttt{POPL(Integer)}}\label{poplinteger}
+\subsubsection{\texttt{POPL(Integer)}}\label{poplinteger}
 
 \begin{gather*}
   \langle (L, \omega \rhd S'), POPL(i)\rangle \Rightarrow WorldM (subst(L, i, \omega), S' )\\
   WorldM \leadsto H[L[i]] \downarrow
 \end{gather*}
 
-\paragraph{\texttt{POPA(Integer)}}\label{popainteger}
-
-\begin{gather*}
-  \langle (\omega_1 \rhd \omega_2 \rhd S'), POPA(i)\rangle \Rightarrow WorldM (subst(\omega_2, i, \omega_1) \rhd S' )\\
-  WorldM \leadsto H[\omega_2.attrs[i]] \downarrow
-\end{gather*}
-
-\paragraph{\texttt{ADD}}\label{add}
+\subsubsection{\texttt{ADD}}\label{add}
 
 \begin{gather*}
   \langle (\omega_1 \rhd \omega_2 \rhd S'), ADD\rangle, \omega_3 \sim \omega_1 + \omega_2 \Rightarrow WorldM (\omega_3 \rhd S')\\
   WorldM \leadsto H[\omega_1] \downarrow, H[\omega_2] \downarrow, H.new(\omega_3)
 \end{gather*}
 
-\paragraph{\texttt{CALL(L|G)(Integer, String, Integer)}}\label{callinteger-string-integer}
+\subsubsection{\texttt{CALL(L|G)(Integer, String, Integer)}}\label{callinteger-string-integer}
 
 \begin{gather*}
   \begin{rcases}
@@ -373,53 +380,71 @@ expression.
   WorldM \leadsto \forall i \in 1...n, H[\omega_i] \downarrow, H.new(\omega')
 \end{gather*}
 
-\paragraph{\texttt{RET}}\label{ret}
+\subsubsection{\texttt{RET}}\label{ret}
 
 \begin{gather*}
   F_0@\langle E_0, RET\rangle \Rightarrow terminate \\
   F_0 \diamond ... \diamond F_{i - 1}@(Susp: \omega \rightarrow \langle E_{i-1}, \sigma \rangle)\diamond F_i@\langle (E_i, \omega \rhd S'), RET\rangle \Rightarrow F_0 \diamond ... \diamond F_{i-1}@ \langle E_{i-1}, \sigma \rangle
 \end{gather*}
 
-\paragraph{\texttt{NEW(Integer)}}\label{newinteger}
+\subsubsection{\texttt{NEW(Integer)}}\label{newinteger}
 
 \begin{gather*}
   \langle (C, S), NEW(i)\rangle, \omega \leftarrow C[i].new() \Rightarrow WorldM (C, \omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
-\paragraph{\texttt{PUSH\_INT(Integer)}}\label{pushux5fintinteger}
+\subsubsection{\texttt{PUSH\_INT(Integer)}}\label{pushux5fintinteger}
 
 \begin{gather*}
   \langle S, PUSH\_INT(i)\rangle, \omega \leftarrow Int.new(i) \Rightarrow WorldM (\omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
-\paragraph{\texttt{PUSH\_STR(String)}}\label{pushux5fstrstring}
+\subsubsection{\texttt{PUSH\_STR(String)}}\label{pushux5fstrstring}
 
 \begin{gather*}
   \langle S, PUSH\_INT(s)\rangle, \omega \leftarrow String.new(s) \Rightarrow WorldM (\omega \rhd S)\\
   WorldM \leadsto H.new(\omega)
 \end{gather*}
 
-\paragraph{\texttt{FRMEND}}\label{frmend}
+\subsubsection{\texttt{FRMEND}}\label{frmend}
 
 This is a pseudo-instruction.
 
-\paragraph{\texttt{CLASS(Integer, Integer)}}\label{classinteger-integer}
+\subsubsection{\texttt{CLASS(Integer, Integer)}}\label{classinteger-integer}
 
 This is a pseudo-instruction.
 
-\paragraph{\texttt{PRINT}}\label{print}
+\subsubsection{\texttt{PRINT}}\label{print}
 
 \begin{gather*}
   \langle (\omega \rhd S), PRINT\rangle \Rightarrow WorldM (\omega \rhd S) \\
   WorldM \leadsto B.print(\omega)
 \end{gather*}
 
-\section{Exception handling and correctness
-protocol}\label{exception-handling-and-correctness-protocol}
+\subsubsection{\texttt{PUSHA(Integer)}}
 
-\subsection{Exception Handling}\label{exception-handling}
+\begin{gather*}
+  \langle (\omega \rhd S), PUSHA(i) \rangle, \omega_a = \omega.attrs[i] \Rightarrow WorldM (\omega_a \rhd S) \\
+  WorldM \leadsto H[\omega] \downarrow, H[\omega_a] \uparrow
+\end{gather*}
+
+\subsubsection{\texttt{PUSHASTR(String)}}
+
+\begin{gather*}
+  \langle (\omega \rhd S), PUSHASTR(s) \rangle, \omega_a = \omega.attrs[s] \Rightarrow WorldM (\omega_a \rhd S) \\
+  WorldM \leadsto H[\omega] \downarrow, H[\omega_a] \uparrow
+\end{gather*}
+
+\subsubsection{\texttt{PUSHSELF}}
+
+\begin{gather*}
+  F_0 \diamond ... F_{i-1}@\langle E_{i-1}, Susp(\omega.f([\omega_i])) \rangle F_i@ \langle S, PUSHSELF \rangle \Rightarrow F... \diamond F_i@ ( \omega   \rhd S) \\
+  WorldM \leadsto H[\omega] \uparrow
+\end{gather*}
+
+\subsection{Exception handling and Correctness of Runtime}\label{exception-handling-and-correctness-protocol}
 
 Currently, RuScript doesn't have error handling capacity, if any
 undefined behaviour happens, the interpreter will simply panic.
@@ -434,59 +459,12 @@ they can't cause interpreter panic at runtime. The defined exceptions should
 print debugging information and exit normally. Such a protocol should be implemented
 by compiler.
 
-\begin{quote}
-Correctness Protocol: \emph{As long as runtime system is enforcing the
-formal model, any compiled code should not cause panic to runtime
-system} 
-\end{quote}
-
-
-\subsection{Correctness Protocol Implementation}
-
-Essentially, this implementation is a \emph{correctness proof of an existing compiler}.
-So, here we will only give some examples of implementation.
-
-The hand-written proofs can be lengthy, imprecise and unreadable, so
-maybe it is possible to construct a model in Coq.
-
-\paragraph{Example}\label{example}
-
-Prove that the following excerpt can generate correct code for expression
-$t_1 + t_2$, assuming that \texttt{pushTerm} can emit a segment of code,
-which when executed, can correctly leave the computed value on top of stack.
-
-\begin{verbatim}
-pushExpr (Plus tm1 tm2) = do
-    pushTerm tm1
-    pushTerm tm2
-    emit SAdd
-\end{verbatim}
-
-Proof:
-
-According to assumption, let \texttt{pushTerm} be such a function
-$f_{term}: Term \rightarrow CompilerM(\Sigma)$, in which $Term$ is lexical
-representation of a term, and $CompilerM$ is the monad analogy of a
-compiler. And for any $t \in Term$, if $t$ is computable under
-environment $E$, then $\langle E, \Sigma \rangle \Rightarrow E'$, in which top of stack
-of $E'$ is value-equivalent of $Term$.
-
-So, let $$\Sigma_1 \leftarrow f_{term}(t_1), \Sigma_2 \leftarrow f_{term}(t_2)$$
-then $$ \Sigma_1 + \Sigma_2 + [SAdd] \leftarrow f_{expr}(Plus(t1, t2))$$
-since
-\begin{gather*}
-  \langle (L, G, C, S), \Sigma_1\rangle, \omega_1 \sim t_1 \Rightarrow (L, G, C, \omega_1 \rhd S) \\
-  \langle (L, G, C, S), \Sigma_2\rangle, \omega_2 \sim t_2 \Rightarrow (L, G, C, \omega_2 \rhd S)
-\end{gather*}
-so $$\langle (L, G, C, S), \Sigma_1 + \Sigma_2\rangle, \omega_1 \sim t_1, \omega_2 \sim t_2 \Rightarrow (L, G, C, \omega_2 \rhd \omega_1 \rhd S)$$
-then $$\langle (L, G, C, S), \Sigma_1 + \Sigma_2 + SAdd\rangle, \omega_3 \sim (t_1 + t_2) \Rightarrow (L, G, C, \omega_3 \rhd S)$$
-which conforms to the spec.
 
 \section{High-Level Language Construct}\label{high-level-language-construct}
 
 \subsection{Code Structure}\label{code-structure}
 
-\paragraph{The grammar}\label{the-grammar}
+\subsubsection{The grammar}\label{the-grammar}
 
 \begin{verbatim}
 <toplevel>      := [<statement>;]
@@ -621,56 +599,48 @@ are ``local \textgreater{} class \textgreater{} global''.
 
 \subsection{Semantics}\label{semantics}
 
-\paragraph{Assigment}\label{assigment}
+\subsubsection{Assigment}\label{assigment}
 
 \[\frac{x \in X_g, SC_G(x) = i, \omega \sim e}
-        {F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L, G[i \mapsto \omega]), C, S)}\]
+        {F_0@(G) \diamond ... F_{>0}@\langle E_{>0}, Compile (x \mapsto e) \rangle \Rightarrow F_0@(G[i \mapsto \omega]) \diamond ... F_{>0}} \textit{declared\_global\_write} \]
 
 \[\frac{x \in X_L, SC_L(x) = i, \omega \sim e}
-        {F_{>0}@\langle (L, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (L[i \mapsto \omega], G, C, S)}\]
+        {F_{>0}@\langle L, Compile (x \mapsto e) \rangle \Rightarrow L[i \mapsto \omega]} \textit{local\_write} \]
 
 \[\frac{x \in X_G, SC_G(x) = i, \omega \sim e}
-        {F_0@\langle (\emptyset, G, C, S), Compile (x \mapsto e) \rangle \Rightarrow (\emptyset, G[i \mapsto \omega], C, S)}\]
+        {F_0@\langle G, Compile (x \mapsto e) \rangle \Rightarrow G[i \mapsto \omega]} \textit{global\_write} \]
 
-\paragraph{Expression \& Term
-evaluation}\label{expression-term-evaluation}
+\subsubsection{Expression \& Term evaluation}\label{expression-term-evaluation}
 
 \[\frac{t_0 \sim \omega_0, t_1 \sim \omega_1, e = t_0 + t_1}
-        {e \sim \omega_0 + \omega_1}\]
+        {e \sim \omega_0 + \omega_1} \textit{ expr\_plus\_eval }\]
 
-\[\frac{\langle(L, G, C, S), Compile(push(t)) \rangle \Rightarrow (L, G, C, \omega \rhd S)}
-        {t \sim \omega}\]
-
-\[\frac{x \in X_{g|L|G}, SC_{G|L}(x) = i, G|L[i] = \omega}{x \sim_{G|L} \omega}\]
+\[\frac{x \in X_{g|L|G}, SC_{G|L}(x) = i, G|L[i] = \omega}{x \sim_{G|L} \omega} \textit{ var\_eval\_scoping } \]
 
 \[\frac{prim \in \mathbb{Z|S}, prim \sim \omega}
-        {\langle S, Compile(push(prim)) \rangle \Rightarrow (\omega \rhd S)}\]
+        {\langle S, Compile(push(prim)) \rangle \Rightarrow (\omega \rhd S)} \textit{ primitive\_eval} \]
 
 \[\frac{c \in C, \omega = New(c)}
-        {\langle S, Compile(push(new(c))) \rangle \Rightarrow (\omega \rhd S)}\]
+        {\langle S, Compile(push(new(c))) \rangle \Rightarrow (\omega \rhd S)} \textit{ constructor\_eval } \]
 
 \[\frac{x \in Id, x \sim \omega}
-        {\langle S, Compile(push(x)) \rangle \Rightarrow (\omega \rhd S)}\]
+        {\langle S, Compile(push(x)) \rangle \Rightarrow (\omega \rhd S)} \textit{ var\_push } \]
 
-\[\frac{x \sim \omega_x, ClassOf(\omega_x) = c,  e_i \sim \omega_i, f_{run}(c.f, [\omega_i]) \sim \omega}
-        {\langle S, Compile(push(x.f([e_i]))) \rangle \Rightarrow (\omega \rhd S)}\]
+\[\frac{x \sim \omega_x, Class(\omega_x) = c,  e_i \sim \omega_i, f_{run}(c.f, [\omega_i]) \sim \omega}
+        {\langle S, Compile(push(x.f([e_i]))) \rangle \Rightarrow (\omega \rhd S)} \textit{ method\_invoking\_push } \]
 
-\[\frac{x \sim \omega_x, ClassOf(\omega_x) = c, i = FindIndex(\alpha, c.attrs), \omega_x.attrs[i] = \omega }
-        {\langle (C, S), Compile(push(x.\alpha)) \rangle \Rightarrow (\omega \rhd S)}\]
+\[\frac{x \sim \omega_x, Class(\omega_x) = c, i = find\_Index(\alpha, c.attrs), \omega_x.attrs[i] = \omega }
+        {\langle (C, S), Compile(push(x.\alpha)) \rangle \Rightarrow (\omega \rhd S)} \textit{ attr\_access\_push } \]
 
-\paragraph{Equivalence}\label{equivalence}
+\subsubsection{Misc}\label{equivalence}
 
-$L \Rightarrow L'$ can be \emph{equivalently} written as
-$L \Rightarrow L$ iff.
-$\forall x \in X_{L}, x \sim_L \omega, x \in X_{L'} \cap x \sim_{L'} \omega$.
-Same for $G$. $S$ must be completely equivalent.
-
-\paragraph{Misc}\label{misc}
+\[\frac{\langle S, Compile(push(e|t)) \rangle \Rightarrow (\omega \rhd S)}
+        {e|t \sim \omega} \textit{ eval\_plus\_synonym} \]
 
 \[\frac{cb_1, cb_2 \in [S], \langle E, Compile(cb_1) \rangle \Rightarrow E', \langle E', Compile(s_2) \rangle \Rightarrow E''}
-       {\langle E, Compile(cb_1 + cb_2) \rangle \Rightarrow E''}\]
+       {\langle E, Compile(cb_1 + cb_2) \rangle \Rightarrow E''} \textit{ eval\_ordring\_restriction } \]
 
-\begin{gather*} F_0 \diamond ... \diamond F_i @\langle(L_i, G, C, S_i) , Susp \rangle \diamond \langle ([\omega_0, \omega_1, ..., void, ...], G, C, empty\_stack) , f \rangle \\ \Downarrow \\ F_0 \diamond ... \diamond F_i \diamond \langle (L, G, C, \omega \rhd S) RET \rangle \\ \line(1,0){250} \\f_{run}(f, [\omega_i]) \sim \omega
+\begin{gather*} F_0@(G) \diamond ... \diamond F_i @\langle(L_i, C, S_i) , Susp \rangle \diamond \langle ([\omega_0, \omega_1, ..., void, ...], C, empty\_stack) , f \rangle \\ \Downarrow \text{Many steps} \\ F_0@(G') \diamond ... \diamond F_i \diamond \langle (L, C, \omega \rhd S) RET \rangle \\ \line(1,0){250} \textit{ frame\_ret\_pop } \\f_{run}(f, [\omega_i]) \sim \omega
 \end{gather*}
 
 \end{document}
