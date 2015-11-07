@@ -32,7 +32,7 @@ pub fn interprete(inst: &SCode,
         &ADD => {
             let a1 = stack.borrow_mut().pop().unwrap();
             let a2 = stack.borrow_mut().pop().unwrap();
-            let ret = a1.call("add", vec![a2, a1.clone()], env, globals);
+            let ret = a1.call("add", vec![a1.clone(), a2], env, globals);
             stack.borrow_mut().push(ret);
         },
         &NEW(x) => {

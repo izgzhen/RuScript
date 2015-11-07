@@ -167,3 +167,12 @@ pub fn access_fail<N>(ty: &str, name: N) -> Gc<_Object> where N: Debug {
     println!("{:?} no such attr {:?}", ty, name);
     Gc::new(Non)
 }
+
+pub fn dump_stack(stack: &GcCell<Vec<Gc<_Object>>>) {
+    print!("stack size: {:?}, content: ", stack.borrow().len());
+    for x in stack.borrow().iter() {
+        print!("{} ", x.tyof());
+    }
+    println!("");
+}
+

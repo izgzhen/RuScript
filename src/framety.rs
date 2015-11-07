@@ -71,12 +71,7 @@ impl Object for Frame_ty {
                         inst => { interprete(&inst, &mut locals, &self.stack, env, globals); }
                     }
 
-                    print!("stack size: {:?}, content: ", self.stack.borrow().len());
-                    for x in self.stack.borrow().iter() {
-                        print!("{} ", x.tyof());
-                    }
-                    println!("");
-
+                    // dump_stack(&self.stack)
                 }
 
                 Gc::new(Non)

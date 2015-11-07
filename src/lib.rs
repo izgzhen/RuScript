@@ -70,12 +70,7 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
             inst => interprete(inst, &mut locals, &stack, &env, &mut globals)
         }
 
-        print!("stack size: {:?}, content: ", stack.borrow().len());
-        for x in stack.borrow().iter() {
-            print!("{} ", x.tyof());
-        }
-        println!("");
-
+        // dump_stack(&stack);
     }
  
 }
