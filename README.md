@@ -18,6 +18,7 @@ Please refer to `docs/spec.md`.
 * Control-flow opcode
     + `jump`: relative/abosolute, conditional/non-conditional which can be used to implement `if`
     + `for`: it can be compiled to manipulation over iterator object, although it can be more efficient if original-semantics is preserved.
+* Need a library processing code-gen conveniently...
 
 ## In future
 * High-level OO semantics: Inheritance & Encapsulation & Polymorphism

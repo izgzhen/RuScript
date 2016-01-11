@@ -23,8 +23,8 @@ pub enum SCode {
     PUSHA(Integer),
     PUSHSELF,
     PUSHASTR(Gc<String>),
-    JUMP_ABS(Integer),
-    JUMP_REL(Integer),
+    // JUMP_ABS(Integer), // FIXME: Far from the compiler's semantics
+    // JUMP_REL(Integer),
 }
 
 pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {

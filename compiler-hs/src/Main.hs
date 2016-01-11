@@ -21,12 +21,11 @@ main = do
                 putStrLn "Source code:"
                 putStrLn $ showSource src
                 case runCompiler src of
-                    (Right (), s, w) -> do
-                        putStrLn $ "Final State: \n" ++ show s
+                    (Right (), s) -> do
                         putStrLn $ "\nSCode:\n"
-                        mapM_ (putStrLn . show) w
-                        writeFile target (concat $ map (encode . serialize) w)
-                    (Left errMsg, s, w) -> do
+                        mapM_ (putStrLn . show) $ emittedCode s
+                        writeFile target (concat $ map (encode . serialize) $ emittedCode s)
+                    (Left errMsg, s) -> do
                         putStrLn $ "Error: " ++ errMsg
         else putStrLn "usage: rusc <source> <target>"
 

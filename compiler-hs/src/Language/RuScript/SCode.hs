@@ -17,6 +17,9 @@ data SCode = SPushL Int
            | SPushA Int
            | SPushSelf
            | SPushAStr String
+           | SJumpRelF Int -- Both JUMPs will check the TOS's value to decide action, if False, do it
+           | SJumpRel  Int -- Jump now!
+           | SNop
            deriving (Show, Eq)
 
 

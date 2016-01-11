@@ -45,6 +45,8 @@ serialize (SPushA i)     = segify 14 [i]
 serialize SPushSelf      = segify 15 []
 serialize (SPushAStr s)  = Segment (fromIntegral 16) $ strToWord32Arr s
 serialize (SCallG i name narg) = Segment (17 :: Word8) $ map fromIntegral [i, narg] ++ strToWord32Arr name
+serialize (SJumpRelF i)  = segify 18 [i]
+serialize (SJumpRel  i)  = segify 19 [i]
 -- serialize x = error $ "unimplelemented serialization of: " ++ show x
 
 

@@ -2,15 +2,17 @@ module Language.RuScript.AST where
 
 -- AST ADT
 
-type Source = [Statement]
+type CodeBlock = [Statement]
 
 data Statement = Assignment String Expr
                | ClassDecl String [String] [MethodDecl]
                | Print Expr
                | Return Expr
+               | IfThenElse Expr CodeBlock (Maybe CodeBlock)
+               | While Expr CodeBlock
 
 
-data MethodDecl = MethodDecl String [String] [String] [Statement]
+data MethodDecl = MethodDecl String [String] [String] CodeBlock
 
 
 
@@ -38,6 +40,12 @@ instance Show Statement where
                                         "};"
   show (Print expr) = "print " ++ show expr ++ ";"
   show (Return expr) = "return " ++ show expr ++ ";"
+  show (IfThenElse condExpr contCb maybeAltCb) =
+    ("if " ++ show condExpr ++ "{\n" ++ unlines (map show contCb) ++ "}\n") ++
+    (case maybeAltCb of
+        Just altCb -> "{\n" ++ unlines (map show altCb) ++ "}\n"
+        Nothing    -> "")
+  show (While condExpr loopCb) = ("while " ++ show condExpr ++ "{\n" ++ unlines (map show loopCb) ++ "}\n")
 
 
 instance Show Term where
@@ -73,7 +81,7 @@ sepShow [] = ""
 sepShow [x] = x
 sepShow (x:y:xs) = x ++ ", " ++ sepShow (y:xs)
 
-showSource :: Source -> String
+showSource :: CodeBlock -> String
 showSource = unlines . map show
 
 getMethodName (MethodDecl n _ _ _) = n

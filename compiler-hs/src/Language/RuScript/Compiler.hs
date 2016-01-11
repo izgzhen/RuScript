@@ -7,28 +7,27 @@ import Language.RuScript.AST
 import Language.RuScript.SCode
 import Language.RuScript.Parser
 import Control.Applicative ((<|>))
-import Control.Monad.RWS
+import Control.Monad.State
 import Control.Monad.Except
+import qualified Data.Vector as V
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Control.Monad
 
-type Config = ()
-
-data Scope = Scope {
+data CompilerState = CompilerState {
   globals        :: NameSpace,
   locals         :: Maybe (NameSpace, NameSet),
   classes        :: NameSpace,
-  classScope     :: Maybe ClassScope
+  classScope     :: Maybe ClassScope,
+  emittedCode    :: Vector SCode
 } deriving (Show)
 
-initConfig = ()
-
-initScope = Scope {
-  globals = initNameSpace,
-  locals  = Nothing,
-  classes = initNameSpace,
-  classScope = Nothing
+initCompilerState = CompilerState {
+  globals       = initNameSpace,
+  locals        = Nothing,
+  classes       = initNameSpace,
+  classScope    = Nothing,
+  emittedCode   = V.empty
 }
 
 data ClassScope = ClassScope {
@@ -38,9 +37,10 @@ data ClassScope = ClassScope {
 
 type NameSet = S.Set String
 
+type Compiler = ExceptT String (State CompilerState)
+runCompiler :: CodeBlock -> (Either String (), CompilerState)
+runCompiler src = runState (runExceptT (compile src)) initCompilerState
 
-type Compiler = ExceptT String (RWS Config [SCode] Scope)
-runCompiler src = runRWS (runExceptT (compile src)) initConfig initScope
 
 data Scoped = G Int | L Int | A Int deriving (Show)
 
@@ -49,7 +49,10 @@ data Context = TopLevel | InMethod deriving (Show)
 newtype ClassId = ClassId Int deriving (Show)
 
 emit :: SCode -> Compiler ()
-emit x = tell [x]
+emit x = modify $ \state -> state { emittedCode = emittedCode state `snoc` [x] }
+
+append :: [SCode] -> Compiler ()
+append xs = modify $ \state -> state { emittedCode = emittedCode state V.++ xs }
 
 pop :: Scoped -> Compiler ()
 pop (G i) = emit $ SPopG i
@@ -61,7 +64,7 @@ push (G i) = emit $ SPushG i
 push (L i) = emit $ SPushL i
 push (A i) = emit $ SPushA i
 
-compile :: Source -> Compiler ()
+compile :: CodeBlock -> Compiler ()
 compile [] = return ()
 compile (s:ss) = case s of
   Assignment lhs expr -> writeVar lhs $ \i -> do
@@ -77,6 +80,27 @@ compile (s:ss) = case s of
         pushExpr expr
         emit SRet
         compile ss
+  IfThenElse condExpr contCb maybeAltCb -> do
+        -- Unless it is a two-pass compiler ... or how could I
+        -- know the length of contCb et cetera?
+        pushExpr condExpr
+        i <- emittedLength
+        emit SNop
+        compile contCb
+        i' <- emittedLength
+        update i $ SJumpRelF (i' - i)
+        -- FIXME: Should clean up scoping as well .... Shit ...
+        case maybeAltCb of
+            Just altCb -> do
+                j <- emittedLength
+                emit SNop
+                compile altCb
+                j' <- emittedLength
+                update i $ SJumpRel (j' - j)
+            Nothing -> return ()
+
+  -- While condExpr loopCb
+
 
 -- Class Definition Generator
 
@@ -84,7 +108,7 @@ emitClass :: String -> [String] -> [MethodDecl] -> Compiler ()
 emitClass name attrs methods = do
     void $ addClass name
     emit $ SClass (length attrs) (length methods)
-    tell (map SPushStr attrs)
+    append (map SPushStr attrs)
     let cscope = ClassScope (collectNames attrs)
                             (collectNames $ map getMethodName methods)
     enterClass cscope $ mapM_ emitMethod methods

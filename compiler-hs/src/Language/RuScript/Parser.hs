@@ -12,7 +12,7 @@ parseSrc = testParser pSrc
 
 testParser p = parse p ""
 
-pSrc :: CharParser () Source
+pSrc :: CharParser () CodeBlock
 pSrc = many (whiteSpace *> pStmt <* (char ';' <* whiteSpace))
 
 pStmt = Assignment <$> (pIdent <* pEq) <*> pExpr
