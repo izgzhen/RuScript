@@ -1,5 +1,5 @@
 name:                ruscript-compiler
-version:             0.1.0.0
+version:             0.1.1
 -- synopsis:            
 -- description:         
 license:             MIT
@@ -14,10 +14,11 @@ cabal-version:       >=1.10
 
 executable rusc
   main-is:             Main.hs
-  other-modules:       Compiler,
-                       Parser,
-                       Serialize,
-                       NameSpace
+  other-modules:       Language.RuScript.Compiler
+                       Language.RuScript.Parser
+                       Language.RuScript.Serialize
+                       Language.RuScript.NameSpace
+                       Language.RuScript.AST
   other-extensions:    FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
                        mtl >=2.2 && <2.3,

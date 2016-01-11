@@ -8,11 +8,12 @@ use super::classty::*;
 use super::primty::*;
 
 
-pub fn interprete(inst: &SCode,
+pub fn interprete(inst_i: usize,
+                  inst: &SCode,
                   locals: &mut Vec<Gc<_Object>>,
                   stack: &GcCell<Vec<Gc<_Object>>>,
                   env: &Gc<Env>,
-                  globals: &mut Vec<Gc<_Object>>) {
+                  globals: &mut Vec<Gc<_Object>>) -> Option<usize> {
 
     match inst {
         &PUSHL(x) => {
@@ -71,8 +72,16 @@ pub fn interprete(inst: &SCode,
             let obj = stack.borrow_mut().pop().unwrap();
             stack.borrow_mut().push(obj.access(s));
         },
+        &JUMP_ABS(x) => {
+            return Some(x as usize);
+        },
+        &JUMP_REL(delta) => {
+            return Some(inst_i + delta as usize);
+        }
         _ => {
             assert!(false, "illegal instruction: {:?}", inst);
         }
-    }
+    };
+
+    None
 }

@@ -1,11 +1,13 @@
-import Compiler
-import Parser
 import System.IO hiding (writeFile)
 import System.Environment
 import Prelude hiding (writeFile, concat)
 import Data.ByteString.Lazy (writeFile, concat)
 import Data.Binary (encode)
-import Serialize
+
+import Language.RuScript.Serialize
+import Language.RuScript.Compiler
+import Language.RuScript.Parser
+import Language.RuScript.AST (showSource)
 
 main = do
     hSetBuffering stdout NoBuffering

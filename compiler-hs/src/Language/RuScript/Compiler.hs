@@ -1,16 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Compiler where
+module Language.RuScript.Compiler where
 
-import Parser
+import Language.RuScript.NameSpace
+import Language.RuScript.AST
+import Language.RuScript.SCode
+import Language.RuScript.Parser
 import Control.Applicative ((<|>))
 import Control.Monad.RWS
 import Control.Monad.Except
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Control.Monad
-import NameSpace
-import SCode
 
 type Config = ()
 

@@ -13,12 +13,15 @@ Status: RFC
 Please refer to `docs/spec.md`.
 
 ## TODOs
-* Write unit tests
-* Revise language spec
+* Inspect the source
+* Write proposals for new features' implementation
+* Control-flow opcode
+    + `jump`: relative/abosolute, conditional/non-conditional which can be used to implement `if`
+    + `for`: it can be compiled to manipulation over iterator object, although it can be more efficient if original-semantics is preserved.
 
 ## In future
-* Inheritance & Encapsulation & Polymorphism
-* Optimization Loop
+* High-level OO semantics: Inheritance & Encapsulation & Polymorphism
+* Optimization
 * REPL interface
-
-
+* Rewrite GC
+* Concurrency support

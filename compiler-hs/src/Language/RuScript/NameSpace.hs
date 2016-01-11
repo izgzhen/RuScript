@@ -1,4 +1,4 @@
-module NameSpace (
+module Language.RuScript.NameSpace (
   NameSpace
 , initNameSpace
 , insertName

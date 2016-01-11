@@ -38,7 +38,9 @@ impl Object for Frame_ty {
                 for _ in args.len()..super::GLOBAL_MAXSIZE {
                     locals.push(void.clone());
                 }
-                for i in 0..self.codeblock.len() {
+
+                let mut i : usize = 0;
+                while i < self.codeblock.len() {
                     let ref inst = self.codeblock[i];
 
                     println!("interpreting: {:?}", inst);
@@ -71,7 +73,12 @@ impl Object for Frame_ty {
                         &SCode::PUSHSELF => {
                             self.stack.borrow_mut().push(args[0].clone());
                         },
-                        inst => { interprete(&inst, &mut locals, &self.stack, env, globals); }
+                        inst => {
+                            match interprete(i, &inst, &mut locals, &self.stack, env, globals) {
+                                Some(new_i) => i = new_i,
+                                None => i = i + 1,
+                            }
+                        }
                     }
 
                     // dump_stack(&self.stack)

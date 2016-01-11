@@ -1,80 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Parser where
+module Language.RuScript.Parser where
+
+import Language.RuScript.AST
 
 import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as Tok
 import qualified Text.Parsec.Char as C
-
-type Source = [Statement]
-
-showSource :: Source -> String
-showSource = unlines . map show
-
-data Statement = Assignment String Expr
-               | ClassDecl String [String] [MethodDecl]
-               | Print Expr
-               | Return Expr
-
-instance Show Statement where
-  show (Assignment name expr) = name ++ " = " ++ show expr ++ ";"
-  show (ClassDecl name attrs methods) = "class " ++ name ++ " {\n" ++
-                                        unlines (map (\a -> "\t" ++ a ++ ";") $ attrs ++ map show methods) ++
-                                        "};"
-  show (Print expr) = "print " ++ show expr ++ ";"
-  show (Return expr) = "return " ++ show expr ++ ";"
-
-data MethodDecl = MethodDecl String [String] [String] [Statement]
-
-getMethodName (MethodDecl n _ _ _) = n
-
-instance Show MethodDecl where
-  show (MethodDecl name args globals stmts) = "fn " ++ name ++ " (" ++ sepShow args ++ ") {\n" ++
-                                              unlines ( map ("\t\t" ++)
-                                                   (map ("global " ++) globals ++
-                                                    map show stmts)) ++ 
-                                              "\t}"
-
-sepShow [] = ""
-sepShow [x] = x
-sepShow (x:y:xs) = x ++ ", " ++ sepShow (y:xs)
-
-data Expr = Single Term
-          | Plus Term Term
-
-instance Show Expr where
-    show (Single t) = show t
-    show (Plus t1 t2) = show t1 ++ " + " ++ show t2
-
-data Term = TVar String
-          | TLitInt Int
-          | TLitStr String
-          | TNew New
-          | TCall Call
-          | TAccess Access
-
-data New    = New String [Expr]
-data Call   = Call String String [Expr]
-data Access = Access String String
-
-instance Show Term where
-    show (TLitStr s) = "\"" ++ s ++ "\""
-    show (TLitInt i) = show i
-    show (TVar v) = v
-    show (TNew new) = show new
-    show (TCall call) = show call 
-    show (TAccess acc) = show acc
-
-instance Show Call where
-    show (Call objName methodName params) = objName ++ "." ++ methodName ++ "(" ++ sepShow (map show params) ++ ")"
-
-instance Show Access where
-    show (Access objName attrName) = objName ++ "." ++ attrName
-
-instance Show New where
-    show (New className params) = "new " ++ className ++ "(" ++ sepShow (map show params) ++ ")"
-
---------- Parser ------------
 
 parseSrc = testParser pSrc
 

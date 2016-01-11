@@ -4,7 +4,7 @@
 extern crate ruscript;
 extern crate gc;
 
-use gc::*;
+// use gc::*;
 use ruscript::stackcode::*;
 use ruscript::classty::*;
 use std::fs::File;

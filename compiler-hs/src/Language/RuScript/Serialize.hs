@@ -1,9 +1,10 @@
-module Serialize where
+module Language.RuScript.Serialize where
+
+import Language.RuScript.SCode
 
 import Data.Word (Word8, Word32)
 import Data.Binary
 import Control.Monad
-import SCode
 import Data.ByteString.UTF8 (fromString)
 import Data.ByteString (unpack)
 import Data.List.Split (chunksOf)

@@ -1,4 +1,4 @@
-module SCode where
+module Language.RuScript.SCode where
 
 data SCode = SPushL Int
            | SPushG Int

@@ -43,9 +43,10 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
             classes: classes,
         });
 
-    for inst in top_level_code {
+    let mut i : usize = 0;
+    while i < top_level_code.len() {
+        let inst: &SCode = &top_level_code[i];
         println!("interpreting: {:?}", inst);
-
 
         match inst {
             &SCode::CALLL(_, _, _) => {
@@ -67,7 +68,12 @@ pub fn run(classes: Vec<Gc<Class_ty>>, top_level_code: &Vec<SCode>) {
             &SCode::PUSHSELF => {
                 assert!(false, "can't use self object on top-level!");
             },
-            inst => interprete(inst, &mut locals, &stack, &env, &mut globals)
+            inst => {
+                match interprete(i, inst, &mut locals, &stack, &env, &mut globals) {
+                    Some(new_i) => i = new_i,
+                    None => i = i + 1, 
+                }
+            }
         }
 
         // dump_stack(&stack);

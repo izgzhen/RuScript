@@ -11,22 +11,20 @@ pub enum SCode {
     POPG(Integer),
     ADD,
     CALLL(Integer, Gc<String>, Integer),
-
     CALLG(Integer, Gc<String>, Integer),
     RET,
     NEW(Integer, Integer),
     PUSH_INT(Integer),
     PUSH_STR(Gc<String>),
-
     FRMEND,
     CLASS(Integer, Integer),
     PRINT,
     POPL(Integer),
-
-
     PUSHA(Integer),
     PUSHSELF,
     PUSHASTR(Gc<String>),
+    JUMP_ABS(Integer),
+    JUMP_REL(Integer),
 }
 
 pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> SCode {
