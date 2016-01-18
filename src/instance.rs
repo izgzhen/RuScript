@@ -8,15 +8,16 @@ use gc::*;
 use object::*;
 use class::Class;
 use env::Env;
+use dispatch::*;
 
 #[derive(Trace)]
 pub struct InstanceObj {
     cls   : Integer,
-    attrs : Vec<Gc<Object>>,
+    attrs : Vec<Gc<DynObj>>,
 }
 
 impl Object for InstanceObj {
-    fn invoke(&mut self, name: &str, args: Vec<Gc<Object>>, env: &Env) -> Option<Gc<Object>> {
+    fn invoke(&mut self, name: &str, args: Vec<Gc<DynObj>>, env: &Env) -> Option<Gc<DynObj>> {
         let parent: &Class = &env.classes[self.cls as usize];
 
         for (fname, code) in &parent.methods {
@@ -30,7 +31,7 @@ impl Object for InstanceObj {
         invoke_fail("InstanceObj", name)
     }
 
-    fn get(&self, name: &str, env: &Env) -> Gc<Object> {
+    fn get(&self, name: &str, env: &Env) -> Gc<DynObj> {
         let parent: &Class = &env.classes[self.cls as usize];
 
         for i in 0..parent.attrs.len() {
@@ -42,7 +43,7 @@ impl Object for InstanceObj {
         access_fail("InstanceObj", name)
     }
 
-    fn set(&mut self, name: &str, new_obj: &Gc<Object>, env: &Env) {
+    fn set(&mut self, name: &str, new_obj: &Gc<DynObj>, env: &Env) {
         let parent: &Class = &env.classes[self.cls as usize];
 
         for i in 0..parent.attrs.len() {

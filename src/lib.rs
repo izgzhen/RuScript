@@ -17,3 +17,5 @@ pub mod class;
 pub mod env;
 pub mod object;
 pub mod instance;
+pub mod primitives;
+pub mod dispatch;

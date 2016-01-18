@@ -66,9 +66,6 @@ pub enum ByteCode {
     PUSHBOOL(Integer),
     // Push a literal Boolean object on stack, zero is False, non-zero is True
 
-    PRINT,
-    // Print TOS to stdout
-
 // ---- Pseudo Instruction ---
     
     CLASS(Integer, Integer, Integer),
