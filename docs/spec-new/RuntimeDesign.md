@@ -12,49 +12,36 @@ fn loader(source: &String) ->
          (Vector<FunctionObj>, Vector<ClassObj>, CodeObj);
 // loader: source code -> global functions, global classes, top-level codeblock
 
-fn initFrame() -> FrameObj;
-
 fn run(declarations: &Vector<Declaration>, topLevelCode: &CodeObj) {
-    let mut rootFrame = initFrame();
-    runRootFrame(declarations, &mut rootFrame, topLevelCode);
+    let mut stack = initStack(); // global stack
+    runFrame(declarations, &mut stack, topLevelCode);
 }
 
-fn runRootFrame(declarations: &Vector<Declaration>,
-                topFrameObj: &mut FrameObj,
-                topLevelCode: &CodeObj) {
-    let mut stack = initStack(); // global stack
-    for inst in topLevelCode {
-        interprete(declarations, inst, &mut stack, &mut topFrameObj.array, None);
+fn runFrame(declarations: &Vector<Declaration>,
+            stack: &mut Stack<Object>,
+            code: &CodeObj) {
+    let mut locals = initLocals();
+    for inst in code {
+        interprete(declarations, inst, &mut stack, &mut locals);
     }
 }
 
 fn interprete(declarations: &Vector<Declaration>,
-              inst: &Instruction,
-              stack: &mut Stack<Object>,
-              globals: &mut Vector<Object>,
-              optLocals: Option<&mut Vector<Object>>) {
+              inst:   &Instruction,
+              stack:  &mut Stack<Object>,
+              locals: &mut Vector<Object>) {
     match inst {
         CALL(...) -> {
-            let mut frame = initFrame();
             let codeObj = getCode(declarations, ...);
-            match runFrame(declarations, &mut frame, &mut stack,
-                           &mut topFrameObj.array, &codeObj) {
+            match runFrame(declarations, &mut stack, &codeObj) {
                 Some(ret) -> ...,
                 None -> ...,
             }
         },
+        // ....
     }
 }
 
-fn runFrame(declarations: &Vector<Declaration>,
-            frame: &mut FrameObj,
-            stack: &mut Stack<Object>,
-            globals: &mut Vector<Object>,
-            code: &CodeObj) {
-    for inst in code {
-        interprete(declarations, inst, &mut stack, &mut globals, Some(&mut frame.array));
-    }
-}
 ```
 
 ## Object System

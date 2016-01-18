@@ -15,10 +15,8 @@ This design is based previous bytecode used and the [Python bytecode](https://do
 * `JUMPT`: Jump relatively inside a codeblock if TOS is `True` boolean
 
 ## General Data Stack Manipulation
-* `PUSHL`: Push integer-indexed local register value on stack
-* `POPL`: Pop TOS to integer-indexed local register
-* `PUSHG`: Push integer-indexed global register value on stack
-* `POPG`: Pop TOS to integer-indexed global register
+* `PUSH`: Push integer-indexed local register value on stack
+* `POP`: Pop TOS to integer-indexed local register
 
 ## OO-specific
 * `NEW`: Instantiate a class and push new object on stack, the class is indexed by integer, and initializer arguments are passed-in by stack.
@@ -41,5 +39,6 @@ This design is based previous bytecode used and the [Python bytecode](https://do
 ## Pseudo Instruction
 * `CLASS`: Mark the start of class declaration
 * `EBODY`: Mark the end of function/method body
+* `VIRT`: Mark as `virtual` method (i.e. not implemented here)
 
-n
+

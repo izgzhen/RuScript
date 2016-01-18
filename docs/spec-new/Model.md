@@ -9,7 +9,7 @@ The runtime is composed of basically a loader, interpreter and a garbage collect
 
 The loader loads in the binary, read instructions from it, and structure the program text into top-level statements and declarations (functions and classes).
 
-The interpreter executes a frame object and effect the global environment. The global environment is initialized from the declarations, plus the globally visible stack and globally visible registers. The root frame is initialized from the top-level statements. And every function-call or method-invocation will create new frames from function body or method body.
+The interpreter executes a frame object and effect the global environment. The global environment is initialized from the declarations, plus a globally visible stack. The root frame is initialized from the top-level statements. And every function-call or method-invocation will create new frames from function body or method body.
 
 Every frame contains its local registers in a way much like C. The arguments is passed in through stack. The return value is returned through stack.
 
