@@ -27,8 +27,7 @@ pub trait Object : Trace {
 }
 
 pub fn invoke_fail(ty: &str, name: &str) -> Option<Gc<DynObj>> {
-    println!("{:?} has no such method {:?}", ty, name);
-    None
+    panic!("{:?} has no such method {:?}", ty, name)
 }
 
 pub fn access_fail<N>(ty: &str, name: N) -> Gc<DynObj> where N: Debug {

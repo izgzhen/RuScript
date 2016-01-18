@@ -3,10 +3,69 @@
  *
  */
 
-use class::Class;
+use class::*;
 use bytecode::ByteCode;
+use deserialize::*;
+use std::fs::File;
+use std::io::Read;
 
 pub struct Env {
     pub classes   : Vec<Class>,
     pub functions : Vec<Vec<ByteCode>>,
+}
+
+pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
+    let mut classes   = vec![];
+    let mut functions = vec![];
+    let mut top_code  = vec![];
+    let mut bytes: Vec<u8> = Vec::new();
+
+    match Read::read_to_end(f, &mut bytes) {
+        Ok(len) => {
+            let mut start_pos = 0;
+            let mut code = vec![];
+            loop {
+                code.push(deserialize(bytes.as_slice(), &mut start_pos));
+                if start_pos >= len {
+                    break;
+                }
+            }
+
+            let mut pc = 0;
+            while pc < code.len() {
+                match code[pc] {
+                    ByteCode::CLASS(ref nattrs, ref nmtds, ref father_idx) => {
+                        let (class, new_pc) = parse_class(&code, *nattrs as usize, *nmtds as usize, pc + 1);
+                        classes.push(class);
+                        pc = new_pc;
+                    },
+                    ByteCode::SFUNC => {
+                        let mut cb = vec![];
+
+                        loop {
+                            match code[pc] {
+                                ByteCode::EBODY => break,
+                                _ => {
+                                    cb.push(code[pc].clone());
+                                    pc = pc + 1;
+                                }
+                            }
+                        }
+
+                        pc = pc + 1;
+                        functions.push(cb);
+                    },
+                    ref inst => {
+                        top_code.push(inst.clone());
+                        pc = pc + 1;
+                    }
+                }
+            }
+        },
+        Err(e) => {
+            panic!("reading bytes error: {}", e);
+        }
+    }
+
+    (Env { classes : classes, functions : functions }, top_code)
 }

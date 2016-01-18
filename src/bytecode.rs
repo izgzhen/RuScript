@@ -72,6 +72,9 @@ pub enum ByteCode {
     // Class declaration: Number of attributes, number of methods,
     // father class index (negative for none)
 
+    SFUNC,
+    // Mark the start of function declaration
+
     EBODY,
     // Mark the end of function/method definition
 

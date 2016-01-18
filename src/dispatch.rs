@@ -20,6 +20,7 @@ pub enum DynObj {
     Bool(BoolObj),
     Str(StrObj),
     Its(InstanceObj),
+    Non,
 }
 
 impl Object for DynObj {
@@ -29,6 +30,7 @@ impl Object for DynObj {
             &mut Bool(ref mut arrobj) => arrobj.invoke(name, args, env),
             &mut Str(ref mut strobj) => strobj.invoke(name, args, env),
             &mut Its(ref mut itsobj) => itsobj.invoke(name, args, env),
+            &mut Non => panic!("Non object is not usable"),
         }
     }
 
@@ -38,6 +40,7 @@ impl Object for DynObj {
             &Bool(ref arrobj) => arrobj.get(name, env),
             &Str(ref strobj) => strobj.get(name, env),
             &Its(ref itsobj) => itsobj.get(name, env),
+            &Non => panic!("Non object is not usable"),
         }
     }
 
@@ -47,6 +50,7 @@ impl Object for DynObj {
             &mut Bool(ref mut arrobj) => arrobj.set(name, new, env),
             &mut Str(ref mut strobj) => strobj.set(name, new, env),
             &mut Its(ref mut itsobj) => itsobj.set(name, new, env),
+            &mut Non => panic!("Non object is not usable"),
         }
     }
 
@@ -56,6 +60,7 @@ impl Object for DynObj {
             &Bool(ref arrobj) => arrobj.tyof(),
             &Str(ref strobj) => strobj.tyof(),
             &Its(ref itsobj) => itsobj.tyof(),
+            &Non => panic!("Non object is not usable"),
         }
     }
 }

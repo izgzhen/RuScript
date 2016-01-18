@@ -1,6 +1,7 @@
 #![crate_name = "ruscript"]
 
 #![feature(plugin, custom_derive, custom_attribute, box_syntax, test)]
+#![feature(convert)]
 #![plugin(gc_plugin)]
 extern crate gc;
 extern crate test;
@@ -19,3 +20,4 @@ pub mod object;
 pub mod instance;
 pub mod primitives;
 pub mod dispatch;
+pub mod interpret;
