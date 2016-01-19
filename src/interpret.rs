@@ -11,17 +11,22 @@ use bytecode::ByteCode::*;
 use object::*;
 use function::*;
 use class::*;
+use instance::InstanceObj;
+use super::*;
 
 pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                 n_locals: usize, code: &Vec<ByteCode>) {
     let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
-    for inst in code {
-        match inst {
-            &CALL(fn_idx) => {
+
+    let mut pc: usize = 0;
+    while pc < code.len() {
+        match code[pc] {
+            CALL(fn_idx) => {
                 let function: &Function = &env.functions[fn_idx as usize];
                 runFrame(env, stack, function.n_locals, &function.code);
+                pc = pc + 1;
             },
-            &INVOKE(ref mtd_name) => {
+            INVOKE(ref mtd_name) => {
                 let mut recv: Gc<DynObj> = stack.pop().unwrap(); // TOS
                 match *recv {
                     DynObj::Ist(ref istobj) => {
@@ -30,25 +35,78 @@ pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                         match class.methods.get(mtd_name) {
                             Some(ref function) => {
                                 runFrame(env, stack, function.n_locals, &function.code);
+                                pc = pc + 1;
                             },
-                            None => { /* invoke built-in methods */
-                                panic!("invoke built-in methods on instance")
+                            None => { 
+                                panic!("FATAL: invoke built-in methods on instance")
                             }
                         }
                     },
                     _ => { panic!("Wrong type of receiver"); }
                 }
             },
-            &RET => {
+            RET => {
                 return;
             },
-            other => interpret(env, other, stack, &mut locals),
+            ref other => {
+                interpret(env, other, stack, &mut locals, &mut pc);
+                pc = pc + 1;
+            }
         }
     }
 }
 
-pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>, locals: &mut Vec<Gc<DynObj>>) {
+pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
+                 locals: &mut Vec<Gc<DynObj>>, pc: &mut usize) {
+    match inst {
+        &JUMP(offset) => {
+            *pc = *pc + offset as usize;
+        },
+        &JUMPT(offset) => {
+            jump_if(stack, pc, true, offset);
+        },
+        &JUMPF(offset) => {
+            jump_if(stack, pc, false, offset);
+        },
+        &PUSH(idx) => {
+            stack.push(locals[idx as usize].clone());
+        },
+        &POP(idx) => {
+            let obj = stack.pop().unwrap();
+            locals[idx as usize] = obj.clone();
+        },
+        &NEW(cls_idx) => {
+            let class: &Class = &env.classes[cls_idx as usize];
+            let obj = InstanceObj::new(class.attrs.len(), cls_idx as usize, stack);
+            stack.push(obj);
+        },
+        &PUSHA(ref attr_name) => {
+            let tos = stack.pop().unwrap();
+            stack.push(tos.get(attr_name, env));
+        },
+        &POPA(ref attr_name) => {
+            let tos = stack.pop().unwrap();
+            let mut ntos_copy: DynObj = (*stack.pop().unwrap()).clone();
+            // FIXME: Copy!
+            ntos_copy.set(attr_name, &tos, env);
 
+            stack.push(Gc::new(ntos_copy));
+        }
+        _ => { unimplemented!() }
+    }
+}
+
+#[inline]
+fn jump_if(stack: &mut Vec<Gc<DynObj>>, pc: &mut usize, cond: bool, offset: Integer) {
+    let tos = stack.pop().unwrap();
+    match *tos {
+        DynObj::Bool(ref boolobj) => {
+            if boolobj.val == cond {
+                *pc = *pc + offset as usize;
+            }
+        }
+        _ => panic!("JUMPT error: TOS is not bool")
+    }
 }
 
 

@@ -30,7 +30,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> ByteCode {
         5 => JUMPF(operands[0]),
         6 => PUSH(operands[0]),
         7 => POP(operands[0]),
-        8 => NEW(operands[0], operands[1]),
+        8 => NEW(operands[0]),
         9 => PUSHA(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
         10 => POPA(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),
         11 => PUSHSTR(read_string(bytes[pos + 2 .. pos + size + 1].to_vec())),

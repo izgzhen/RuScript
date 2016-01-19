@@ -14,7 +14,7 @@ use object::*;
 use gc::*;
 use self::DynObj::*;
 
-#[derive(Trace)]
+#[derive(Trace, Clone)]
 pub enum DynObj {
     Int(IntObj),
     Bool(BoolObj),

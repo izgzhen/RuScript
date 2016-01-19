@@ -40,14 +40,15 @@ pub enum ByteCode {
 
 // --- OO Specific ---
 
-    NEW(Integer, Integer),
-    // Instantiate a class and push instance on stack: class index, arguments number
+    NEW(Integer),
+    // Instantiate a class and push instance on stack: class index
 
     PUSHA(String),
     // Push attribute of TOS on stack: attribute name
 
     POPA(String),
-    // Pop TOS to certain attribute of NTOS: attribute name
+    // Pop TOS to certain attribute of NTOS,
+    // the mutated NTOS will be pushed back: attribute name
 
 // --- Built-in ----
 

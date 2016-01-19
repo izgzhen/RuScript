@@ -9,19 +9,19 @@ use object::*;
 use env::Env;
 use dispatch::DynObj;
 
-#[derive(Trace)]
+#[derive(Trace, Clone)]
 pub struct IntObj {
-    val: Integer,
+    pub val: Integer,
 }
 
-#[derive(Trace)]
+#[derive(Trace, Clone)]
 pub struct BoolObj {
-    val: bool,
+    pub val: bool,
 }
 
-#[derive(Trace)]
+#[derive(Trace, Clone)]
 pub struct StrObj {
-    val: String
+    pub val: String
 }
 
 

@@ -10,10 +10,26 @@ use class::Class;
 use env::Env;
 use dispatch::*;
 
-#[derive(Trace)]
+#[derive(Trace, Clone)]
 pub struct InstanceObj {
-    pub cls   : Integer,
+    pub cls   : usize,
     pub attrs : Vec<Gc<DynObj>>,
+}
+
+impl InstanceObj {
+    pub fn new(attrs_len: usize, cls_idx: usize, stack: &mut Vec<Gc<DynObj>>) -> Gc<DynObj> {
+        let mut attrs = vec![];
+
+        for _ in 0..attrs_len {
+            let obj = stack.pop().unwrap();
+            attrs.push(obj.clone());
+        }
+
+        Gc::new(DynObj::Ist(InstanceObj {
+            cls: cls_idx,
+            attrs: attrs
+        }))
+    }
 }
 
 impl Object for InstanceObj {
