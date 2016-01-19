@@ -32,8 +32,8 @@ pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                 match *recv {
                     DynObj::Ist(ref istobj) => {
                         let class: &Class = &env.classes[istobj.cls as usize];
-                        // stack.push(recv.clone());
-                        match class.methods.get(mtd_name) {
+                        stack.push(recv.clone());
+                        match class.get_method(mtd_name, env) {
                             Some(ref function) => {
                                 runFrame(env, stack, function.n_locals, &function.code);
                                 pc = pc + 1;

@@ -8,11 +8,28 @@ use bytecode::ByteCode;
 use bytecode::ByteCode::*;
 use function::*;
 use super::*;
+use env::Env;
 
 pub struct Class {
     pub father  : Option<usize>,
     pub methods : HashMap<String, Function>,
     pub attrs   : Vec<String>,
+}
+
+impl Class {
+    pub fn get_method<'a>(&'a self, name: &String, env: &'a Env) -> Option<&'a Function> {
+        match self.methods.get(name) {
+            Some(method) => Some(method),
+            None => {
+                match self.father {
+                    Some(idx) => {
+                        env.classes[idx].get_method(name, env)
+                    },
+                    None => { panic!("Can' find method {:?}", name) }
+                }
+            }
+        }
+    }
 }
 
 pub fn parse_class(code: &Vec<ByteCode>, n_attrs: usize,
