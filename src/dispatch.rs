@@ -1,11 +1,11 @@
-/* 
- * Dynamic dispatch
- *
- * We need to explicitly deal with different types of
- * data dynamically. Although Object trait object
- * is also dynamic, but too dangerous to be casted
- * back
- */
+//!
+//! Dynamic dispatch
+//!
+//! We need to explicitly deal with different types of
+//! data dynamically. Although Object trait object
+//! is also dynamic, but too dangerous to be casted
+//! back
+//!
 
 use primitives::*;
 use instance::InstanceObj;
@@ -20,9 +20,11 @@ pub enum DynObj {
     Bool(BoolObj),
     Str(StrObj),
     Ist(InstanceObj),
+    /// None Type, mostly used to initialize empty local vars
     Non,
 }
 
+/// Dispatch Object trait calls explicitly at runtime
 impl Object for DynObj {
     fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
         match self {

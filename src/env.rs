@@ -1,7 +1,9 @@
-/* 
- * Runtime Environment
- *
- */
+//! 
+//! Runtime Environment
+//!
+//! The data structure and loader. The
+//! environment is assumed to be immutable
+//! 
 
 use class::*;
 use bytecode::ByteCode;
@@ -15,6 +17,8 @@ pub struct Env {
     pub functions : Vec<Function>,
 }
 
+/// Load bytes from a file handler, deserialize, split top-level
+/// statements from declarations
 pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
     let mut classes   = vec![];
     let mut functions = vec![];

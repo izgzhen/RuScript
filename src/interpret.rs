@@ -1,7 +1,6 @@
-/* 
- * Intrepreting bytecode instruction
- *
- */
+//! 
+//! Intrepreting bytecode instruction
+//!
 
 use env::Env;
 use gc::*;
@@ -15,23 +14,30 @@ use instance::InstanceObj;
 use super::*;
 use primitives::*;
 
+
+/// Initialize and execute a frame
 pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                 n_locals: usize, code: &Vec<ByteCode>) {
     let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
 
     let mut pc: usize = 0;
     while pc < code.len() {
+        // Dealing with frame control instructions
         match code[pc] {
+            // Call global function
             CALL(fn_idx) => {
                 let function: &Function = &env.functions[fn_idx as usize];
                 runFrame(env, stack, function.n_locals, &function.code);
                 pc = pc + 1;
             },
+            // Invoke method of instance (TOS)
             INVOKE(ref mtd_name) => {
-                let mut recv: Gc<DynObj> = stack.pop().unwrap(); // TOS
+                let mut recv: Gc<DynObj> = stack.pop().unwrap();
                 match *recv {
+                    // Check type at runtime
                     DynObj::Ist(ref istobj) => {
                         let class: &Class = &env.classes[istobj.cls as usize];
+                        // `this` pointer
                         stack.push(recv.clone());
                         match class.get_method(mtd_name, env) {
                             Some(ref function) => {
@@ -57,11 +63,14 @@ pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
     }
 }
 
+
+/// Interpret in-frame instructions
 pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
                  locals: &mut Vec<Gc<DynObj>>, pc: &mut usize) {
     match inst {
         &JUMP(offset) => {
-            *pc = *pc + offset as usize;
+            // offset might be negative
+            *pc = (*pc as Integer + offset) as usize;
         },
         &JUMPT(offset) => {
             jump_if(stack, pc, true, offset);
@@ -113,24 +122,26 @@ pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
                 stack.push(BoolObj::new(false));
             }
         },
-        _ => { unimplemented!() }
+        other => { panic!("{:?}'s interpretation is not implemented", other) }
     }
 }
 
+/// Jump if TOS is bool object and its value is equal to `cond`
 #[inline]
 fn jump_if(stack: &mut Vec<Gc<DynObj>>, pc: &mut usize, cond: bool, offset: Integer) {
     let tos = stack.pop().unwrap();
     match *tos {
         DynObj::Bool(ref boolobj) => {
             if boolobj.val == cond {
-                *pc = *pc + offset as usize;
+                // offset might be negative
+                *pc = (*pc as Integer + offset) as usize;
             }
         }
         _ => panic!("JUMPT error: TOS is not bool")
     }
 }
 
-
+/// Initialize a vector of length `len` and full of `init`
 #[inline]
 fn init_vec<T: Clone>(len: usize, init: T) -> Vec<T> {
     let mut v = Vec::with_capacity(len);

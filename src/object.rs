@@ -1,11 +1,11 @@
-/* 
- * Object trait interface
- *
- * Every thing allocated in heap, traced by GC,
- * and referenced through local variable and global
- * stack should implement this trait interface
- * 
- */
+//!
+//! Object trait interface
+//!
+//! Every thing allocated in heap, traced by GC,
+//! and referenced through local variable and global
+//! stack should implement this trait interface
+//! 
+//!
 
 use gc::*;
 use std::fmt::Debug;

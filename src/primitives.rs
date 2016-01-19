@@ -1,7 +1,6 @@
-/* 
- * Instance objects
- *
- */
+//! 
+//! Primitive types object
+//!
 
 use super::*;
 use gc::*;
@@ -46,6 +45,7 @@ impl StrObj {
 
 
 impl Object for IntObj {
+    /// Built-in functions: `add`, `print`
     fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "add" => {
@@ -71,6 +71,7 @@ impl Object for IntObj {
 
 
 impl Object for BoolObj {
+    /// Built-in functions: `not`, `print`
     fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env){
         match name {
             "not" => {
@@ -87,6 +88,7 @@ impl Object for BoolObj {
 }
 
 impl Object for StrObj {
+    /// Built-in functions: `print`
     fn invoke(&mut self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "print" => {

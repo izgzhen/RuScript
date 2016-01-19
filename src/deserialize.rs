@@ -1,11 +1,11 @@
-/* 
- * Deserailization of binary to bytecode
- *
- */
+//! 
+//! Deserialization of binary to bytecode
+//!
 
 use bytecode::ByteCode;
 use bytecode::ByteCode::*;
 
+/// Deserialize bytes array form pos_mut
 pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> ByteCode {
     let pos = *pos_mut;
     let size = bytes[pos] as usize;
@@ -39,7 +39,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> ByteCode {
         14 => CLASS(operands[0], operands[1], operands[2]),
         15 => SFUNC,
         16 => EBODY(operands[0]),
-        _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
+        _  => panic!("Not implemented deserialization: {:?}", opcode)
     };
 
     *pos_mut = pos + size + 1;
@@ -47,15 +47,17 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> ByteCode {
     inst
 }
 
+/// Read string embedded in bytes, the string encoding is UTF-8
 fn read_string(v: Vec<u8>) -> String {
     let mut ret: String = "".to_string();
 
-    if v.len() > 4 { // Deal with the completely coded segment
+    if v.len() > 4 {
+        // Deal with the completely coded segment
         match String::from_utf8(v[0..(v.len() - 4)].to_vec()) {
             Ok(s) => {
                 ret = ret + &s;
             },
-            Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+            Err(e) => panic!("error in reading string: {:?}", e)
         }
 
         let mut i = v.len() - 4;
@@ -68,7 +70,7 @@ fn read_string(v: Vec<u8>) -> String {
                 Ok(s) => {
                     ret = ret + &s;
                 },
-                Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+                Err(e) => panic!("error in reading string: {:?}", e)
             }
         }
     } else {
@@ -82,7 +84,7 @@ fn read_string(v: Vec<u8>) -> String {
                 Ok(s) => {
                     ret = ret + &s;
                 },
-                Err(e) => { assert!(false, "error in reading string: {:?}", e); unimplemented!() }
+                Err(e) => panic!("error in reading string: {:?}", e)
             }
         }
     }

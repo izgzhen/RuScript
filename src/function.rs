@@ -1,7 +1,9 @@
-/* 
- * Function Definition and related
- *
- */
+//! 
+//! Function structure and parser
+//!
+//! The size of local variables needed
+//! is determined at compile time.
+//!
 
 use bytecode::ByteCode;
 

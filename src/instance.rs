@@ -1,7 +1,6 @@
-/* 
- * Instance object
- *
- */
+//! 
+//! Instance object
+//!
 
 use super::*;
 use gc::*;
@@ -12,11 +11,15 @@ use dispatch::*;
 
 #[derive(Trace, Clone)]
 pub struct InstanceObj {
+    /// Index of parent class, from which the variable is initialized
     pub cls   : usize,
+    /// Attributes values, in the same order as declared
     pub attrs : Vec<Gc<DynObj>>,
 }
 
 impl InstanceObj {
+    /// Instance initializer. The attributes are parameter of initialization and put in the
+    /// same way as common functions
     pub fn new(attrs_len: usize, cls_idx: usize, stack: &mut Vec<Gc<DynObj>>) -> Gc<DynObj> {
         let mut attrs = vec![];
 
@@ -33,6 +36,8 @@ impl InstanceObj {
 }
 
 impl Object for InstanceObj {
+    /// We can't invoke internally because the class's methods will
+    /// be checked first.
     fn invoke(&mut self, name: &str, _: &mut Vec<Gc<DynObj>>, _: &Env) {
         invoke_fail("InstanceObj", name)
     }
@@ -60,8 +65,6 @@ impl Object for InstanceObj {
 
         access_fail("InstanceObj", name);
     }
-
-    
 
     fn tyof(&self) -> String {
         "<instance>".to_string()
