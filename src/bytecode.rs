@@ -10,17 +10,14 @@ pub enum ByteCode {
 
 // --- Frame Manipulation ---
 
-    CALL(Integer, Integer),
+    CALL(Integer),
     // Call declared function: arguments number, function index
 
-    INVOKE(Integer, String),
+    INVOKE(String),
     // Invoke method of TOS: arguments number, method name
 
     RET,
     // Return without value
-
-    RETTOS,
-    // Return top of stack
 
 // ---- Control -----
 
@@ -51,9 +48,6 @@ pub enum ByteCode {
 
     POPA(String),
     // Pop TOS to certain attribute of NTOS: attribute name
-
-    PUSHSELF,
-    // Push reference to self on stack
 
 // --- Built-in ----
 

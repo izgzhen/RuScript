@@ -46,21 +46,21 @@ impl StrObj {
 
 
 impl Object for IntObj {
-    fn invoke(&mut self, name : &str, args: Vec<Gc<DynObj>>, _ : &Env) -> Option<Gc<DynObj>> {
+    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "add" => {
-                let ref b = *args[1];
-                match b {
-                    &DynObj::Int(ref intobj) => Some(IntObj::new(self.val + intobj.val)),
-                    other => {
-                        println!("invalid type for add: {:?}", other.tyof());
-                        return None;
+                let b = stack.pop().unwrap();
+                match *b {
+                    DynObj::Int(ref intobj) => {
+                        stack.push(IntObj::new(self.val + intobj.val));
+                    },
+                    ref other => {
+                        panic!("invalid type for add: {:?}", other.tyof());
                     }
                 } 
             },
             "print" => {
                 print!("{}", self.val);
-                return None;
             },
             other => invoke_fail("IntObj", other)
         }
@@ -71,12 +71,13 @@ impl Object for IntObj {
 
 
 impl Object for BoolObj {
-    fn invoke(&mut self, name : &str, _: Vec<Gc<DynObj>>, _ : &Env) -> Option<Gc<DynObj>> {
+    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env){
         match name {
-            "not" => Some(BoolObj::new(!self.val)),
+            "not" => {
+                stack.push(BoolObj::new(!self.val));
+            },
             "print" => {
                 print!("{}", self.val);
-                return None;
             },
             other => invoke_fail("BoolObj", other)
         }
@@ -86,11 +87,10 @@ impl Object for BoolObj {
 }
 
 impl Object for StrObj {
-    fn invoke(&mut self, name : &str, args: Vec<Gc<DynObj>>, _ : &Env) -> Option<Gc<DynObj>> {
+    fn invoke(&mut self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "print" => {
                 print!("{}", self.val);
-                return None;
             },
             other => invoke_fail("StrObj", other)
         }

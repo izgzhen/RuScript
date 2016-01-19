@@ -13,7 +13,7 @@ use env::Env;
 use dispatch::*;
 
 pub trait Object : Trace {
-    fn invoke(&mut self, name: &str, args: Vec<Gc<DynObj>>, env: &Env) -> Option<Gc<DynObj>>;
+    fn invoke(&mut self, name: &str, stack: &mut Vec<Gc<DynObj>>, env: &Env);
 
     fn get(&self, name: &str, env: &Env) -> Gc<DynObj> {
         access_fail(&self.tyof(), name)
@@ -26,7 +26,7 @@ pub trait Object : Trace {
     fn tyof(&self) -> String;
 }
 
-pub fn invoke_fail(ty: &str, name: &str) -> Option<Gc<DynObj>> {
+pub fn invoke_fail(ty: &str, name: &str) {
     panic!("{:?} has no such method {:?}", ty, name)
 }
 

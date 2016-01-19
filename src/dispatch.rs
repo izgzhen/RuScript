@@ -19,17 +19,17 @@ pub enum DynObj {
     Int(IntObj),
     Bool(BoolObj),
     Str(StrObj),
-    Its(InstanceObj),
+    Ist(InstanceObj),
     Non,
 }
 
 impl Object for DynObj {
-    fn invoke(&mut self, name : &str, args: Vec<Gc<DynObj>>, env: &Env) -> Option<Gc<DynObj>> {
+    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
         match self {
-            &mut Int(ref mut intobj) => intobj.invoke(name, args, env),
-            &mut Bool(ref mut arrobj) => arrobj.invoke(name, args, env),
-            &mut Str(ref mut strobj) => strobj.invoke(name, args, env),
-            &mut Its(ref mut itsobj) => itsobj.invoke(name, args, env),
+            &mut Int(ref mut intobj) => intobj.invoke(name, stack, env),
+            &mut Bool(ref mut arrobj) => arrobj.invoke(name, stack, env),
+            &mut Str(ref mut strobj) => strobj.invoke(name, stack, env),
+            &mut Ist(ref mut istobj) => istobj.invoke(name, stack, env),
             &mut Non => panic!("Non object is not usable"),
         }
     }
@@ -39,7 +39,7 @@ impl Object for DynObj {
             &Int(ref intobj) => intobj.get(name, env),
             &Bool(ref arrobj) => arrobj.get(name, env),
             &Str(ref strobj) => strobj.get(name, env),
-            &Its(ref itsobj) => itsobj.get(name, env),
+            &Ist(ref istobj) => istobj.get(name, env),
             &Non => panic!("Non object is not usable"),
         }
     }
@@ -49,7 +49,7 @@ impl Object for DynObj {
             &mut Int(ref mut intobj) => intobj.set(name, new, env),
             &mut Bool(ref mut arrobj) => arrobj.set(name, new, env),
             &mut Str(ref mut strobj) => strobj.set(name, new, env),
-            &mut Its(ref mut itsobj) => itsobj.set(name, new, env),
+            &mut Ist(ref mut istobj) => istobj.set(name, new, env),
             &mut Non => panic!("Non object is not usable"),
         }
     }
@@ -59,7 +59,7 @@ impl Object for DynObj {
             &Int(ref intobj) => intobj.tyof(),
             &Bool(ref arrobj) => arrobj.tyof(),
             &Str(ref strobj) => strobj.tyof(),
-            &Its(ref itsobj) => itsobj.tyof(),
+            &Ist(ref istobj) => istobj.tyof(),
             &Non => panic!("Non object is not usable"),
         }
     }

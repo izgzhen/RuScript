@@ -12,13 +12,12 @@ use dispatch::*;
 
 #[derive(Trace)]
 pub struct InstanceObj {
-    cls   : Integer,
-    attrs : Vec<Gc<DynObj>>,
+    pub cls   : Integer,
+    pub attrs : Vec<Gc<DynObj>>,
 }
 
 impl Object for InstanceObj {
-    fn invoke(&mut self, name: &str, args: Vec<Gc<DynObj>>, env: &Env) -> Option<Gc<DynObj>> {
-        
+    fn invoke(&mut self, name: &str, _: &mut Vec<Gc<DynObj>>, _: &Env) {
         invoke_fail("InstanceObj", name)
     }
 
