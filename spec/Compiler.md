@@ -1,6 +1,6 @@
 # Compiler Design
 
-The compiler needs to compile the RuScript language into RuScript bytecode. First, it should enforce the correctness of advanced semantics; Second, it should try to eliminate the majority of runtime error through static checking; Third, it should try to optimize the bytecode to archive better efficiency and smaller binary.
+The compiler needs to compile the RuScript language into RuScript bytecode. First, it should enforce the correctness of advanced semantics; Second, it should try to eliminate the majority of runtime error through static checking; Third, it should try to optimize the bytecode to archive better efficiency and smaller binary size.
 
 ## High-level Language Design
 The [model](./Model.md) has already given some suggestion over how the language looks like. Here is a more formal description.
@@ -16,6 +16,7 @@ stmt    := 'var' binding <'=' expr>
          | 'if' expr { [stmt] } <'else' { [stmt] }>
          | 'while' expr { [stmt] }
          | 'return' expr
+         | 'break'
 
 lhs     := x
          | x.attr

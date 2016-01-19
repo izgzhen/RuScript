@@ -12,9 +12,7 @@ Status: RFC
 Please refer to `docs/spec-new`.
 
 ## TODOs
-* Review the new runtime and make comments
-* Write `main.rs` for the new runtime
-* Revise design doc
 * Rewrite compiler
   + `Codegen` monad
   + Take static checking etc. into consideration
+* Write `main.rs` for the new runtime
