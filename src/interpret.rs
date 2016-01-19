@@ -13,6 +13,7 @@ use function::*;
 use class::*;
 use instance::InstanceObj;
 use super::*;
+use primitives::*;
 
 pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                 n_locals: usize, code: &Vec<ByteCode>) {
@@ -87,11 +88,31 @@ pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
         &POPA(ref attr_name) => {
             let tos = stack.pop().unwrap();
             let mut ntos_copy: DynObj = (*stack.pop().unwrap()).clone();
-            // FIXME: Copy!
             ntos_copy.set(attr_name, &tos, env);
-
             stack.push(Gc::new(ntos_copy));
-        }
+
+            /*
+                Although in fact we copied the object entirely, but only
+                pointers are copied so the time overhead is not significant.
+
+                Beyond that, the original NTOS is popped out and will be
+                garbage-collected sometime, so the references to the unmodified
+                parts are actually intact.
+             */
+        },
+        &PUSHSTR(ref s) => {
+            stack.push(StrObj::new(s.clone()));
+        },
+        &PUSHINT(i) => {
+            stack.push(IntObj::new(i));
+        },
+        &PUSHBOOL(i) => {
+            if i == 0 {
+                stack.push(BoolObj::new(true));
+            } else {
+                stack.push(BoolObj::new(false));
+            }
+        },
         _ => { unimplemented!() }
     }
 }

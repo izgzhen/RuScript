@@ -26,20 +26,20 @@ pub struct StrObj {
 
 
 impl IntObj {
-    fn new(i: Integer) -> Gc<DynObj> {
+    pub fn new(i: Integer) -> Gc<DynObj> {
         Gc::new(DynObj::Int(IntObj { val : i }))
     }
 }
 
 impl BoolObj {
-    fn new(b: bool) -> Gc<DynObj> {
+    pub fn new(b: bool) -> Gc<DynObj> {
         Gc::new(DynObj::Bool(BoolObj { val : b }))
     }
 }
 
 
 impl StrObj {
-    fn new(s: String) -> Gc<DynObj> {
+    pub fn new(s: String) -> Gc<DynObj> {
         Gc::new(DynObj::Str(StrObj { val : s }))
     }
 }

@@ -7,14 +7,16 @@ use std::collections::HashMap;
 use bytecode::ByteCode;
 use bytecode::ByteCode::*;
 use function::*;
+use super::*;
 
 pub struct Class {
+    pub father  : Option<usize>,
     pub methods : HashMap<String, Function>,
     pub attrs   : Vec<String>,
 }
 
 pub fn parse_class(code: &Vec<ByteCode>, n_attrs: usize,
-                   n_methods: usize, pc: &mut usize) -> Class {
+                   n_methods: usize, father_idx: Integer, pc: &mut usize) -> Class {
 
     let mut attrs = Vec::new();
     let mut methods = HashMap::new();
@@ -33,7 +35,6 @@ pub fn parse_class(code: &Vec<ByteCode>, n_attrs: usize,
     }
 
     for _ in 0..n_methods {
-
         let function = parse_function(code, pc);
 
         match code[*pc] {
@@ -44,7 +45,13 @@ pub fn parse_class(code: &Vec<ByteCode>, n_attrs: usize,
         *pc = *pc + 1;
     }
 
+    let mut father = None;
+    if father_idx >= 0 {
+        father = Some(father_idx as usize);
+    }
+
     Class {
+        father  : father,
         methods : methods,
         attrs   : attrs,
     }

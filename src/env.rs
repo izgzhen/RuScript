@@ -35,9 +35,10 @@ pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
             let mut pc = 0;
             while pc < code.len() {
                 match code[pc] {
-                    ByteCode::CLASS(ref nattrs, ref nmtds, ref father_idx) => {
+                    ByteCode::CLASS(nattrs, nmtds, father_idx) => {
                         pc = pc + 1;
-                        let class = parse_class(&code, *nattrs as usize, *nmtds as usize, &mut pc);
+                        let class = parse_class(&code, nattrs as usize, nmtds as usize,
+                                                father_idx, &mut pc);
                         classes.push(class);
                     },
                     ByteCode::SFUNC => {

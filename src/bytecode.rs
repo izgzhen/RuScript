@@ -73,7 +73,5 @@ pub enum ByteCode {
     EBODY(Integer),
     // Mark the end of function/method definition: Number of local vars
 
-    VIRT,
-    // Mark `virtual` method
 }
 
