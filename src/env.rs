@@ -8,10 +8,11 @@ use bytecode::ByteCode;
 use deserialize::*;
 use std::fs::File;
 use std::io::Read;
+use function::*;
 
 pub struct Env {
     pub classes   : Vec<Class>,
-    pub functions : Vec<Vec<ByteCode>>,
+    pub functions : Vec<Function>,
 }
 
 pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
@@ -35,25 +36,13 @@ pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
             while pc < code.len() {
                 match code[pc] {
                     ByteCode::CLASS(ref nattrs, ref nmtds, ref father_idx) => {
-                        let (class, new_pc) = parse_class(&code, *nattrs as usize, *nmtds as usize, pc + 1);
+                        pc = pc + 1;
+                        let class = parse_class(&code, *nattrs as usize, *nmtds as usize, &mut pc);
                         classes.push(class);
-                        pc = new_pc;
                     },
                     ByteCode::SFUNC => {
-                        let mut cb = vec![];
-
-                        loop {
-                            match code[pc] {
-                                ByteCode::EBODY => break,
-                                _ => {
-                                    cb.push(code[pc].clone());
-                                    pc = pc + 1;
-                                }
-                            }
-                        }
-
                         pc = pc + 1;
-                        functions.push(cb);
+                        functions.push(parse_function(&code, &mut pc));
                     },
                     ref inst => {
                         top_code.push(inst.clone());

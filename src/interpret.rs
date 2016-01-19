@@ -7,12 +7,25 @@ use env::Env;
 use gc::*;
 use dispatch::DynObj;
 use bytecode::ByteCode;
+use bytecode::ByteCode::*;
 use object::*;
 
-pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>, n_locals: usize, code: &Vec<ByteCode>) {
+pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
+                n_locals: usize, code: &Vec<ByteCode>) {
     let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
     for inst in code {
-        interpret(env, inst, stack, &mut locals);
+        match inst {
+            &CALL(n_args, fn_idx) => {
+
+            },
+            &INVOKE(n_args, ref method) => {
+
+            },
+            &RET => {},
+            &RETTOS => {},
+            &PUSHSELF => {},
+            other => interpret(env, other, stack, &mut locals),
+        }
     }
 }
 

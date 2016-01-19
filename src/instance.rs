@@ -18,16 +18,7 @@ pub struct InstanceObj {
 
 impl Object for InstanceObj {
     fn invoke(&mut self, name: &str, args: Vec<Gc<DynObj>>, env: &Env) -> Option<Gc<DynObj>> {
-        let parent: &Class = &env.classes[self.cls as usize];
-
-        for (fname, code) in &parent.methods {
-            if *fname == name.to_string() {
-                // 
-                // return frame.call("__run__", args.clone(), env, globals);
-                return None;
-            }
-        }
-
+        
         invoke_fail("InstanceObj", name)
     }
 

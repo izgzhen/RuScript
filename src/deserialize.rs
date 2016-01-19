@@ -40,7 +40,7 @@ pub fn deserialize(bytes: &[u8], pos_mut: &mut usize) -> ByteCode {
         15 => PUSHSELF,
         16 => CLASS(operands[0], operands[1], operands[2]),
         17 => SFUNC,
-        18 => EBODY,
+        18 => EBODY(operands[0]),
         19 => VIRT,
         _ => { assert!(false, "Not implemented deserialization: {:?}", opcode); unimplemented!() }
     };

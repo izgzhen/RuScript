@@ -75,8 +75,8 @@ pub enum ByteCode {
     SFUNC,
     // Mark the start of function declaration
 
-    EBODY,
-    // Mark the end of function/method definition
+    EBODY(Integer),
+    // Mark the end of function/method definition: Number of local vars
 
     VIRT,
     // Mark `virtual` method
