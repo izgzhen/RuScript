@@ -7,8 +7,8 @@ type Binding = (Name, Type)
 data Type = TyInt | TyBool | TyStr | TyClass Name deriving (Show, Eq)
 
 -- Basic Block
-data Block = Branch Expr Block Block
-           | Loop Expr Block
+data Block = Branch Expr [Statement] [Statement]
+           | Loop Expr [Statement]
            | Linear [Statement]
            deriving (Show, Eq)
 
@@ -49,4 +49,4 @@ data Method = Virtual  FnSig
             | Concrete FnSig [Statement]
             deriving (Show, Eq)
 
-data Program = Program [Either Statement Declaration]
+data Program = Program [Either Statement Declaration] deriving (Show, Eq)

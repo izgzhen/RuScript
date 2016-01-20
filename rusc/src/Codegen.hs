@@ -10,6 +10,7 @@ import ByteCode
 import Control.Arrow
 import Data.Either
 import Control.Lens
+import Data.Maybe (fromJust)
 
 -- The enclosed loop's entry position and exit label
 type EnclosedLoop   = (Pos, Label)
@@ -26,38 +27,37 @@ data CodegenState = CodegenState {
     _symbolTable    :: M.Map Name Int
 }
 
+initState :: CodegenState
+initState = CodegenState M.empty V.empty Nothing M.empty initLabel M.empty
+
 makeLenses ''CodegenState
 
 -- flatten a block into the linear address space, return
 -- the next new address after the allocated space
 
+printCode :: V.Vector ByteCode -> IO ()
+printCode v = mapM_ (\(i, c) -> putStrLn $ show i ++ " : " ++ show c) $ zip [0..] (V.toList v)
+
+runCodeGen :: ToByteCode a => a -> V.Vector ByteCode
+runCodeGen a = let s = execState (flatten a) initState
+               in  delabel (_bytecode s) (_labelPos s)
+
+delabel :: V.Vector ByteCode -> M.Map Label Pos -> V.Vector ByteCode
+delabel v m = V.imap f v
+    where
+        f i (JUMP  (Right lbl)) = JUMP  $ Left (fromJust (M.lookup lbl m) - i - 1)
+        f i (JUMPF (Right lbl)) = JUMPF $ Left (fromJust (M.lookup lbl m) - i - 1)
+        f i (JUMPT (Right lbl)) = JUMPT $ Left (fromJust (M.lookup lbl m) - i - 1)
+        f _ other = other
+
+
 class ToByteCode a where
-    -- flatten :: Pos -> a -> Codegen Pos
     flatten :: a -> Codegen ()
 
 instance ToByteCode Block where
-    -- flatten entry = \case
-    --     Branch expr b1 b2 -> do
-    --         a1 <- flatten entry expr
-    --         a2 <- flatten (a1 + 1) b1
-    --         a3 <- flatten (a2 + 1) b2
-    --         write a1 $ JUMPT $ Left (a2 + 1)
-    --         write a2 $ JUMP  $ Left a3
-    --         return a3
-    --     Loop expr b -> do
-    --         a1 <- flatten entry expr
-    --         exit <- mkLabel
-    --         a2 <- inLoop entry exit $
-    --                 flatten (a1 + 1) b
-    --         write a1 $ JUMPF $ Left (a2 + 1)
-    --         write a2 $ JUMP  $ Left entry
-    --         substantiate exit (a2 + 1)
-    --         return (a2 + 1)
-    --     Linear stmts -> foldM flatten entry stmts
-
     flatten (Branch expr b1 b2) = do
         flatten expr
-        l1 <- jumpt -- JUMPT <l1>
+        l1 <- jumpf -- JUMPF <l1>
         flatten b1
         l2 <- jump  -- JUMP  <l2>
         mark l1     -- substantiate l1 to current position
@@ -70,34 +70,13 @@ instance ToByteCode Block where
         flatten expr
         exit <- jumpf
         inLoop entry exit $ flatten b
-        emit $ JUMP $ Left entry
+        p <- getPos
+        emit $ JUMP $ Left (entry - p - 1)
         mark exit
         
-    flatten (Linear stmts) = mapM_ flatten stmts
+    flatten (Linear stmts) = flatten stmts
 
 instance ToByteCode Expr where
-    -- flatten p (EVar x) = pushVar p x
-    -- flatten p (EGet x attr) = do
-    --     p' <- pushVar p x
-    --     emit $ PUSHA attr
-    --     return $ p' + 1
-    -- flatten p (EInvoke x f exprs) = do
-    --     let exprs' = reverse exprs
-    --     p' <- foldM flatten p exprs'
-    --     p'' <- pushVar p' x
-    --     emit $ INVOKE f
-    --     return $ p'' + 1
-    -- flatten p (ENew c exprs) = do
-    --     let exprs' = reverse exprs
-    --     p' <- foldM flatten p exprs'
-    --     new p' c
-    -- flatten p (ELit lit) = do
-    --     case lit of
-    --         LStr s  -> emit $ PUSHSTR s
-    --         LInt i  -> emit $ PUSHINT i
-    --         LBool b -> if b then emit (PUSHBOOL 1) else emit (PUSHBOOL 0)
-    --     return $ p + 1
-
     flatten (EVar x) = pushVar x
 
     flatten (EGet x attr) = do
@@ -106,12 +85,12 @@ instance ToByteCode Expr where
 
     flatten (EInvoke x f exprs) = do
         let exprs' = reverse exprs
-        mapM_ flatten exprs'
+        flatten exprs'
         pushVar x
         emit $ INVOKE f
 
     flatten (ENew c exprs) = do
-        mapM_ flatten $ reverse exprs
+        flatten $ reverse exprs
         new c
 
     flatten (ELit lit) = do
@@ -121,17 +100,8 @@ instance ToByteCode Expr where
             LBool b -> if b then emit (PUSHBOOL 1) else emit (PUSHBOOL 0)
 
 instance ToByteCode Statement where
-    -- flatten p (SVar (x, _) (Just expr)) =
-    --     flatten p expr >>= \p' -> popVar p' x
-    -- flatten p (SAssign x expr) =
-    --     flatten p expr >>= \p' -> popVar p' x
-    -- flatten p (SBBlock b) = flatten p b
-    -- flatten p SReturn = emit RET >> return (p + 1)
-    -- flatten p SBreak = withLoop $ \_ exitLabel -> do
-    --     emit $ JUMP (Right exitLabel)
-    --     return $ p + 1
-
     flatten (SVar (x, _) (Just expr)) = do
+        addVar x
         flatten expr
         popVar x
 
@@ -144,27 +114,9 @@ instance ToByteCode Statement where
     flatten SBreak      = withLoop $ \_ exitLabel -> emit $ JUMP (Right exitLabel)
 
 instance ToByteCode Declaration where
-    -- flatten p (FnDecl (FnSig name bindings) stmts) = do
-    --     emit SFUNC
-    --     flattenFunc (p + 1) name bindings stmts
-
     flatten (FnDecl (FnSig name bindings) stmts) = do
         emit SFUNC
         flattenFunc name bindings stmts
-
-    -- flatten p (ClassDecl x mFather attrs methods) = do
-    --     let concretes = filter (isConcrete . snd) methods
-    --     father_idx <- case mFather of
-    --         Just x  -> indexOfClass x
-    --         Nothing -> return (-1)
-    --     emit $ CLASS (length attrs) (length concretes) father_idx
-    --     mapM_ (\(_, (s, _)) -> emit $ PUSHSTR s) attrs
-    --     let p' = p + 1 + length attrs
-    --     foldM (\p (_, (Concrete (FnSig name bindings) stmts)) -> do
-    --                 p' <- flattenFunc p name bindings stmts
-    --                 emit $ PUSHSTR name
-    --                 return $ p' + 1)
-    --           p' concretes
 
     flatten (ClassDecl x mFather attrs methods) = do
         let concretes = filter (isConcrete . snd) methods
@@ -177,31 +129,16 @@ instance ToByteCode Declaration where
                     flattenFunc name bindings stmts
                     emit $ PUSHSTR name
 
--- flattenFunc :: Pos -> String -> [Binding] -> [Statement] -> Codegen Pos
--- flattenFunc p name bindings stmts = do
---         (p', nLocals) <- inScope p bindings $ \p -> do
---             p' <- foldM flatten (p + 1) stmts
---             nLocals <- M.size <$> use symbolTable
---             return (p', nLocals)
---         emit $ EBODY nLocals
---         return $ p' + 1
+instance ToByteCode a => ToByteCode [a] where
+    flatten = mapM_ flatten
 
 flattenFunc :: String -> [Binding] -> [Statement] -> Codegen ()
 flattenFunc name bindings stmts = do
         nLocals <- inScope bindings $ do
-            mapM_ flatten stmts
+            flatten stmts
             nLocals <- M.size <$> use symbolTable
             return nLocals
         emit $ EBODY nLocals
-
--- inScope :: Pos -> [Binding] -> (Pos -> Codegen a) -> Codegen a
--- inScope p bindings gen = do
---     oldTable <- use symbolTable
---     symbolTable .= M.fromList (zip (map fst bindings) [0..])
---     forM_ [0..(length bindings)] $ emit . POP
---     ret <- gen $ p + length bindings
---     symbolTable .= oldTable
---     return ret
 
 inScope :: [Binding] -> Codegen a -> Codegen a
 inScope bindings gen = do
@@ -213,17 +150,11 @@ inScope bindings gen = do
     return ret
 
 instance ToByteCode Program where
-    -- flatten p (Program mixed) = do
-    --     let declarations = rights mixed
-    --     let topStmts = lefts mixed
-    --     p'  <- foldM flatten p declarations
-    --     foldM flatten p' topStmts
-
     flatten (Program mixed) = do
         let declarations = rights mixed
         let topStmts = lefts mixed
-        mapM_ flatten declarations
-        mapM_ flatten topStmts
+        flatten declarations
+        flatten topStmts
 
 -- Helpers
 
@@ -268,34 +199,21 @@ mark l = getPos >>= substantiate l
 getPos :: Codegen Pos
 getPos = V.length <$> use bytecode
 
--- pushVar :: Pos -> Name -> Codegen Pos
--- pushVar pos name = do
---     t <- use symbolTable
---     case M.lookup name t of
---         Just idx -> emit $ PUSH idx
---         Nothing  -> do
---             let idx = M.size t
---             symbolTable .= M.insert name idx t
---             emit $ PUSH idx
---     return $ pos + 1
-
-pushVar :: Name -> Codegen ()
-pushVar name = do
+withVar :: (Int -> ByteCode) -> Name -> Codegen ()
+withVar constr name = do
     t <- use symbolTable
     case M.lookup name t of
-        Just idx -> emit $ PUSH idx
-        Nothing  -> do
-            let idx = M.size t
-            symbolTable .= M.insert name idx t
-            emit $ PUSH idx
+        Just idx -> emit $ constr idx
+        Nothing  -> error $ "use name before declaration: " ++ show name
+
+addVar :: Name -> Codegen ()
+addVar name = symbolTable %= (\t -> M.insert name (M.size t) t)
 
 popVar :: Name -> Codegen ()
-popVar name = do
-    t <- use symbolTable
-    case M.lookup name t of
-        Just idx -> emit $ POP idx
-        Nothing  -> error $ "use name before assigning: " ++ show name
+popVar = withVar POP
 
+pushVar :: Name -> Codegen ()
+pushVar = withVar PUSH
 
 emit :: ByteCode -> Codegen ()
 emit code = bytecode %= flip V.snoc code
