@@ -16,7 +16,7 @@ executable rusc
   main-is:             Main.hs
   other-modules:       Language.RuScript.Codegen
                        Language.RuScript.Parser
-                       -- Language.RuScript.Serialize
+                       Language.RuScript.Serialize
                        Language.RuScript.AST
                        Language.RuScript.ByteCode
   other-extensions:    FlexibleContexts

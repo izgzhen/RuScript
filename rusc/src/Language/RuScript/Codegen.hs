@@ -39,8 +39,8 @@ makeLenses ''CodegenState
 printCode :: V.Vector ByteCode -> IO ()
 printCode v = mapM_ (\(i, c) -> putStrLn $ show i ++ " : " ++ show c) $ zip [0..] (V.toList v)
 
-runCodeGen :: ToByteCode a => a -> V.Vector ByteCode
-runCodeGen a = let s = execState (flatten a) initState
+runCodegen :: ToByteCode a => a -> V.Vector ByteCode
+runCodegen a = let s = execState (flatten a) initState
                in  delabel (_bytecode s) (_labelPos s)
 
 delabel :: V.Vector ByteCode -> M.Map Label Pos -> V.Vector ByteCode

@@ -1,6 +1,6 @@
 module Language.RuScript.Serialize where
 
-import Language.RuScript.SCode
+import Language.RuScript.ByteCode
 
 import Data.Word (Word8, Word32)
 import Data.Binary
@@ -27,28 +27,26 @@ instance Binary Segment where
         operands <- mapM id $ take ((fromIntegral bytes - 1) `div` 4) $ repeat (get :: Get Word32)
         return $ Segment opcode operands
 
-serialize :: SCode -> Segment
-serialize (SPushL i)     = segify 0 [i]
-serialize (SPushG i)     = segify 1 [i]
-serialize (SPopG  i)     = segify 2 [i]
-serialize SAdd           = segify 3 []
-serialize (SCallL i name narg) = Segment (4 :: Word8) $ map fromIntegral [i, narg] ++ strToWord32Arr name
-serialize SRet           = segify 5 []
-serialize (SNew i n)     = segify 6 [i, n]
-serialize (SPushInt i)   = segify 7 [i]
-serialize (SPushStr str) = Segment (fromIntegral 8) $ strToWord32Arr str
-serialize SFrameEnd      = segify 9 []
-serialize (SClass i1 i2) = segify 10 [i1, i2]
-serialize SPrint         = segify 11 []
-serialize (SPopL i)      = segify 12 [i]
-serialize (SPushA i)     = segify 14 [i]
-serialize SPushSelf      = segify 15 []
-serialize (SPushAStr s)  = Segment (fromIntegral 16) $ strToWord32Arr s
-serialize (SCallG i name narg) = Segment (17 :: Word8) $ map fromIntegral [i, narg] ++ strToWord32Arr name
-serialize (SJumpRelF i)  = segify 18 [i]
-serialize (SJumpRel  i)  = segify 19 [i]
--- serialize x = error $ "unimplelemented serialization of: " ++ show x
+serialize :: ByteCode -> Segment
+serialize (CALL i)          = segify 0 [i]
+serialize (INVOKE s)        = Segment (fromIntegral 1) $ strToWord32Arr s
+serialize RET               = segify 2 []
+serialize (JUMP (Left i))   = segify 3 [i]
+serialize (JUMPT (Left i))  = segify 4 [i]
+serialize (JUMPF (Left i))  = segify 5 [i]
+serialize (PUSH i)          = segify 6 [i]
+serialize (POP i)           = segify 7 [i]
+serialize (NEW i)           = segify 8 [i]
+serialize (PUSHA s)         = Segment (fromIntegral 9) $ strToWord32Arr s
+serialize (POPA s)          = Segment (fromIntegral 10) $ strToWord32Arr s
+serialize (PUSHSTR s)       = Segment (fromIntegral 11) $ strToWord32Arr s
+serialize (PUSHINT i)       = segify 12 [i]
+serialize (PUSHBOOL i)      = segify 13 [i]
+serialize (CLASS i1 i2 i3)  = segify 14 [i1, i2, i3]
+serialize SFUNC             = segify 15 []
+serialize (EBODY i)         = segify 16 []
 
+-- serialize x = error $ "unimplelemented serialization of: " ++ show x
 
 segify :: Int -> [Int] -> Segment
 segify i is = Segment (fromIntegral i) (map fromIntegral is)
