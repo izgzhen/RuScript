@@ -18,6 +18,7 @@ type EnclosedLoop   = (Pos, Label)
 type Codegen        = State CodegenState
 
 data CodegenState = CodegenState {
+    _globalTable    :: M.Map Name Int,
     _bytecode       :: V.Vector ByteCode,
     _enclosed       :: Maybe EnclosedLoop,
     _labelPos       :: M.Map Label Pos,
@@ -247,19 +248,25 @@ inLoop pos lbl gen = do
     return a
 
 jumpt :: Codegen Label
-jumpt = undefined
+jumpt = jumpGen JUMPT
 
 jump :: Codegen Label
-jump = undefined
+jump = jumpGen JUMP
 
 jumpf :: Codegen Label
-jumpf = undefined
+jumpf = jumpGen JUMPF
+
+jumpGen :: (Address -> ByteCode) -> Codegen Label
+jumpGen constr = do
+    l <- mkLabel
+    emit $ constr $ Right l
+    return l
 
 mark :: Label -> Codegen ()
-mark = undefined
+mark l = getPos >>= substantiate l
 
 getPos :: Codegen Pos
-getPos = undefined
+getPos = V.length <$> use bytecode
 
 -- pushVar :: Pos -> Name -> Codegen Pos
 -- pushVar pos name = do
@@ -282,27 +289,37 @@ pushVar name = do
             symbolTable .= M.insert name idx t
             emit $ PUSH idx
 
+popVar :: Name -> Codegen ()
+popVar name = do
+    t <- use symbolTable
+    case M.lookup name t of
+        Just idx -> emit $ POP idx
+        Nothing  -> error $ "use name before assigning: " ++ show name
+
+
 emit :: ByteCode -> Codegen ()
-emit = undefined
+emit code = bytecode %= flip V.snoc code
 
 new :: Name -> Codegen ()
-new = undefined
-
-popVar :: Name -> Codegen ()
-popVar = undefined
+new x = indexOfClass x >>= emit . NEW
 
 withLoop :: (Pos -> Label -> Codegen a) -> Codegen a
-withLoop = undefined
-
-countLocalVars :: [Binding] -> [Statement] -> Int
-countLocalVars = undefined
-
+withLoop callback = do
+    mEnclosed <- use enclosed
+    case mEnclosed of
+        Just (pos, lbl) -> callback pos lbl
+        Nothing -> error "not in enclosed loop"
 
 isConcrete :: Method -> Bool
-isConcrete = undefined
+isConcrete (Concrete _ _) = True
+isConcrete _ = False
 
 indexOfClass :: Name -> Codegen Int
-indexOfClass = undefined
+indexOfClass name = do
+    t <- use globalTable
+    case M.lookup name t of
+        Nothing  -> error $ "can't find class " ++ show name
+        Just idx -> return idx
 
 
 update' :: Int -> a -> V.Vector a -> V.Vector a
