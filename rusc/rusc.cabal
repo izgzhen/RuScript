@@ -1,6 +1,6 @@
-name:                ruscript-compiler
-version:             0.1.1
--- synopsis:            
+name:                rusc
+version:             0.2.0
+synopsis:            Compiler for RuScript
 -- description:         
 license:             MIT
 license-file:        LICENSE

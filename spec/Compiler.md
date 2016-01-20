@@ -78,4 +78,10 @@ Compared with the previous version, the new version changed in the following way
 * **Introduction of control-flow statements**
 * **Introduction of OO advanced features**
 
+## Implementation
+It should be modular. The code-generation can be expressed as a separate problem of transforming a graph into a linear ordering. The name to index environment should be a separate module. The structural mapping can also be abstracted out. The optimization pass should be written more generic.
+
+
+
+
 
