@@ -1,14 +1,14 @@
 # Demo of RuScript
 
 class Y {
-    virtual fn minus(y: Int)
+    virtual fn minus(y: Int) -> Int
 }
 
 class X inherits Y {
     private a : Int
     b : Bool
 
-    fn add(x: Int) {
+    fn add(x: Int) -> Int {
         var a: Int = self.a;
 
         if (self.b) {
@@ -19,7 +19,7 @@ class X inherits Y {
         }
     }
 
-    fn minus(y: Int) {
+    fn minus(y: Int) -> Int {
         return y;
     }
 }

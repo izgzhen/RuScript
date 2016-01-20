@@ -139,7 +139,7 @@ call f exprs = do
 
 
 instance ToByteCode Declaration where
-    flatten (FnDecl (FnSig name bindings) stmts) = do
+    flatten (FnDecl (FnSig name bindings _) stmts) = do
         addFunc name
         emit SFUNC
         flattenFunc Nothing name bindings stmts
@@ -153,7 +153,7 @@ instance ToByteCode Declaration where
             Nothing -> return (-1)
         emit $ CLASS (length attrs) (length concretes) father_idx
         forM_ attrs $ \(_, (s, _)) -> emit $ PUSHSTR s
-        forM_ concretes $ \(_, (Concrete (FnSig name bindings) stmts)) -> do
+        forM_ concretes $ \(_, (Concrete (FnSig name bindings _) stmts)) -> do
                     flattenFunc (Just x) name bindings stmts
                     emit $ PUSHSTR name
 

@@ -16,3 +16,7 @@ Please refer to `docs/spec-new`.
   + `Codegen` monad
   + Take static checking etc. into consideration
 * Write `main.rs` for the new runtime
+
+## FIXME
+* Linked dot, e.g. `a.b.c` or `a.b.c.f(1,2,3).e(4.5.6)` (But this can be get around with `var` bindings)
+

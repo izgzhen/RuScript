@@ -42,7 +42,7 @@ data LHS = LVar  Name
          deriving (Show, Eq)
 
 -- Top-level construct
-data FnSig = FnSig Name [Binding] deriving (Show, Eq)
+data FnSig = FnSig Name [Binding] (Maybe Type) deriving (Show, Eq)
 
 data Declaration = FnDecl FnSig [Statement]
                  | ClassDecl Name (Maybe Name) [(Visibility, Attr)] [(Visibility, Method)]

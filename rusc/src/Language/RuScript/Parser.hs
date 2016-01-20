@@ -96,7 +96,13 @@ pFnSig = do
     whiteSpace
     args <- whiteSpace *> (parens $ pBinding `sepEndBy` (char ',' <* whiteSpace))
     whiteSpace
-    return $ FnSig name args
+    mty <- pMaybeRetType
+    whiteSpace
+    return $ FnSig name args mty
+
+pMaybeRetType :: MyParser (Maybe Type)
+pMaybeRetType = try (Just <$> (string "->" *> whiteSpace *> pType))
+            <|> return Nothing
 
 pBinding :: MyParser Binding
 pBinding = (,) <$> (pIdent <* whiteSpace) <*> (char ':' *> (whiteSpace *> pType))
