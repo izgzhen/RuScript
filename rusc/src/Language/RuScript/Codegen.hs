@@ -9,6 +9,7 @@ import Control.Arrow
 import Data.Either
 import Control.Lens
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 import Language.RuScript.AST
 import Language.RuScript.ByteCode
@@ -20,7 +21,8 @@ type EnclosedLoop   = (Pos, Label)
 type Codegen        = State CodegenState
 
 data CodegenState = CodegenState {
-    _globalTable    :: M.Map Name Int,
+    _classTable     :: M.Map Name Int,
+    _funcTable      :: M.Map Name Int,
     _bytecode       :: V.Vector ByteCode,
     _enclosed       :: Maybe EnclosedLoop,
     _labelPos       :: M.Map Label Pos,
@@ -29,7 +31,7 @@ data CodegenState = CodegenState {
 }
 
 initState :: CodegenState
-initState = CodegenState M.empty V.empty Nothing M.empty initLabel M.empty
+initState = CodegenState M.empty M.empty V.empty Nothing M.empty initLabel M.empty
 
 makeLenses ''CodegenState
 
@@ -98,6 +100,7 @@ instance ToByteCode Expr where
             LBool b -> if b then emit (PUSHBOOL 1) else emit (PUSHBOOL 0)
 
 instance ToByteCode Statement where
+    flatten (SVar (x, _) Nothing) = addVar x
     flatten (SVar (x, _) (Just expr)) = do
         addVar x
         flatten expr
@@ -131,42 +134,49 @@ call :: Name -> [Expr] -> Codegen ()
 call f exprs = do
     let exprs' = reverse exprs
     flatten exprs'
-    i <- indexOfGlobal f
+    i <- lookupFunc f
     emit $ CALL i
 
 
 instance ToByteCode Declaration where
     flatten (FnDecl (FnSig name bindings) stmts) = do
+        addFunc name
         emit SFUNC
-        flattenFunc name bindings stmts
+        flattenFunc Nothing name bindings stmts
 
     flatten (ClassDecl x mFather attrs methods) = do
+        addClass x
         let concretes = filter (isConcrete . snd) methods
+
         father_idx <- case mFather of
-            Just x  -> indexOfGlobal x
+            Just x  -> lookupClass x
             Nothing -> return (-1)
         emit $ CLASS (length attrs) (length concretes) father_idx
         forM_ attrs $ \(_, (s, _)) -> emit $ PUSHSTR s
         forM_ concretes $ \(_, (Concrete (FnSig name bindings) stmts)) -> do
-                    flattenFunc name bindings stmts
+                    flattenFunc (Just x) name bindings stmts
                     emit $ PUSHSTR name
 
 instance ToByteCode a => ToByteCode [a] where
     flatten = mapM_ flatten
 
-flattenFunc :: String -> [Binding] -> [Statement] -> Codegen ()
-flattenFunc name bindings stmts = do
-        nLocals <- inScope bindings $ do
+flattenFunc :: (Maybe Name) -> String -> [Binding] -> [Statement] -> Codegen ()
+flattenFunc mClsName name bindings stmts = do
+        nLocals <- inScope mClsName bindings $ do
             flatten stmts
             nLocals <- M.size <$> use symbolTable
             return nLocals
         emit $ EBODY nLocals
 
-inScope :: [Binding] -> Codegen a -> Codegen a
-inScope bindings gen = do
+inScope :: (Maybe Name) -> [Binding] -> Codegen a -> Codegen a
+inScope mClsName bindings gen = do
+    let bindings' = case mClsName of
+                        Just clsName -> ("self", TyClass clsName) : bindings
+                        Nothing      -> bindings
+
     oldTable <- use symbolTable
-    symbolTable .= M.fromList (zip (map fst bindings) [0..])
-    forM_ [0..(length bindings)] $ emit . POP
+    symbolTable .= M.fromList (zip (map fst bindings') [0..])
+    forM_ [0..(length bindings' - 1)] $ emit . POP
     ret <- gen
     symbolTable .= oldTable
     return ret
@@ -241,7 +251,7 @@ emit :: ByteCode -> Codegen ()
 emit code = bytecode %= flip V.snoc code
 
 new :: Name -> Codegen ()
-new x = indexOfGlobal x >>= emit . NEW
+new x = lookupClass x >>= emit . NEW
 
 withLoop :: (Pos -> Label -> Codegen a) -> Codegen a
 withLoop callback = do
@@ -254,12 +264,25 @@ isConcrete :: Method -> Bool
 isConcrete (Concrete _ _) = True
 isConcrete _ = False
 
-indexOfGlobal :: Name -> Codegen Int
-indexOfGlobal name = do
-    t <- use globalTable
+lookupClass :: Name -> Codegen Int
+lookupClass name = do
+    t <- use classTable
     case M.lookup name t of
         Nothing  -> error $ "can't find class " ++ show name
         Just idx -> return idx
+
+addClass :: Name -> Codegen ()
+addClass name = classTable %= (\t -> M.insert name (M.size t) t)
+
+lookupFunc :: Name -> Codegen Int
+lookupFunc name = do
+    t <- use funcTable
+    case M.lookup name t of
+        Nothing  -> error $ "can't find class " ++ show name
+        Just idx -> return idx
+
+addFunc :: Name -> Codegen ()
+addFunc name = funcTable %= (\t -> M.insert name (M.size t) t)
 
 
 update' :: Int -> a -> V.Vector a -> V.Vector a
