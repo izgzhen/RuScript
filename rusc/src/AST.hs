@@ -49,6 +49,4 @@ data Method = Virtual  FnSig
             | Concrete FnSig [Statement]
             deriving (Show, Eq)
 
-type ProgramMixed = [Either Statement Declaration]
-
-data Program = Program [Declaration] [Statement] deriving (Show, Eq)
+data Program = Program [Either Statement Declaration]

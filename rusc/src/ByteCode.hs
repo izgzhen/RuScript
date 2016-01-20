@@ -33,7 +33,7 @@ data ByteCode = CALL Int
 
 data Label = Label Int          -- Label no.
            | LabelRel Label Int -- Relative address to a label
-           deriving (Show, Eq)
+           deriving (Show, Eq, Ord)
 
 initLabel :: Label
 initLabel = Label 0
