@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell, RankNTypes,
              TypeSynonymInstances, FlexibleInstances,
-             FlexibleContexts #-}
+             FlexibleContexts, LambdaCase #-}
 
 module Language.RuScript.StaticCheck where
 
@@ -97,12 +97,10 @@ instance Check Statement where
     check SBreak = return ()
 
 checkFunc :: FnSig -> [Expr] -> Static ()
-checkFunc sig params = case sig of
-    FnSig _ bindings _ -> do
-        tys <- mapM infer params
-        assert (length tys == length bindings) "length of params is not equal to type signature"
-        mapM_ (uncurry assertEq) $ zip (map snd bindings) tys
-    _ -> throwError "error in check SInvoke"
+checkFunc (FnSig _ bindings _) params = do
+    tys <- mapM infer params
+    assert (length tys == length bindings) "length of params is not equal to type signature"
+    mapM_ (uncurry assertEq) $ zip (map snd bindings) tys
 
 instance Check Block where
     check (Branch expr ss1 ss2) = do
@@ -158,7 +156,8 @@ instance Infer LHS where
 
 
 addFnSig :: FnSig -> Static ()
-addFnSig = undefined
+addFnSig sig@(FnSig name _ _) = funcTable %= M.insert name sig
+
 
 inLocal :: FnSig -> Static a -> Static a
 inLocal sig m = do
@@ -168,13 +167,22 @@ inLocal sig m = do
     return ret
 
 addEmptyClass :: Name -> (Maybe Name) -> Static ()
-addEmptyClass = undefined
+addEmptyClass name mInherit =
+    classTable %= M.insert name (ClassType mInherit M.empty M.empty)
 
 addAttr :: Name -> Binding -> Static ()
-addAttr = undefined
+addAttr name (x, ty) = classTable %= M.update (Just . over attrTable (M.insert x ty)) name
 
 addMethod :: Name -> Method -> Static ()
-addMethod = undefined
+addMethod name = \case
+    Virtual sig        -> addMethod' sig
+    Concrete sig stmts -> do
+        addMethod' sig
+        inLocal sig $ check stmts
+    where
+        addMethod' :: FnSig -> Static ()
+        addMethod' sig@(FnSig x _ _) =
+            classTable %= M.update (Just . over mtdTable (M.insert x sig)) name
 
 assertEq :: (MonadError String m, Eq a, Show a) => a -> a -> m ()
 assertEq a b = assert (a == b) $ show a ++ " and " ++ show b ++ " are not equal"
@@ -183,11 +191,22 @@ assert :: MonadError e m => Bool -> e -> m ()
 assert b e = if b then return () else throwError e
 
 addBinding :: Binding -> Static ()
-addBinding = undefined
+addBinding (x, ty) = localTable %= M.insert x ty
 
 
 getSigFromType :: Name -> Type -> Static FnSig
-getSigFromType = undefined
+getSigFromType method = \case
+    TyInt       -> queryBuiltin method TyInt
+    TyBool      -> queryBuiltin method TyBool
+    TyStr       -> queryBuiltin method TyStr
+    TyClass cls -> do
+        t <- use classTable
+        case M.lookup cls t of
+            Just table -> case M.lookup method $ _mtdTable table of
+                Just sig -> return sig
+                Nothing -> throwError $ "has no idea of method " ++ method
+            Nothing -> throwError $ "has no idea of class " ++ cls
+
 
 getSigOfFunc :: Name -> Static FnSig
 getSigOfFunc = undefined
@@ -208,3 +227,5 @@ getAttrs = undefined
 
 
 
+queryBuiltin :: Name -> Type -> Static FnSig
+queryBuiltin = undefined
