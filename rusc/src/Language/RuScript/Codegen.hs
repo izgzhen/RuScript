@@ -1,16 +1,17 @@
 {-# LANGUAGE LambdaCase, TemplateHaskell #-}
 
-module Codegen where
+module Language.RuScript.Codegen where
 
 import Control.Monad.State
 import qualified Data.Vector as V
 import qualified Data.Map as M
-import AST
-import ByteCode
 import Control.Arrow
 import Data.Either
 import Control.Lens
 import Data.Maybe (fromJust)
+
+import Language.RuScript.AST
+import Language.RuScript.ByteCode
 
 -- The enclosed loop's entry position and exit label
 type EnclosedLoop   = (Pos, Label)
@@ -73,8 +74,7 @@ instance ToByteCode Block where
         p <- getPos
         emit $ JUMP $ Left (entry - p - 1)
         mark exit
-        
-    flatten (Linear stmts) = flatten stmts
+
 
 instance ToByteCode Expr where
     flatten (EVar x) = pushVar x

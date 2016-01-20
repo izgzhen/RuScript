@@ -1,6 +1,6 @@
-module ByteCode (
+module Language.RuScript.ByteCode (
   ByteCode(..)
-, Label(LabelRel)
+, Label
 , initLabel
 , genLabel
 , Pos
@@ -31,9 +31,8 @@ data ByteCode = CALL Int
 
 -- Label
 
-data Label = Label Int          -- Label no.
-           | LabelRel Label Int -- Relative address to a label
-           deriving (Show, Eq, Ord)
+newtype Label = Label Int          -- Label no.
+              deriving (Show, Eq, Ord)
 
 initLabel :: Label
 initLabel = Label 0

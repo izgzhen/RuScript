@@ -1,7 +1,7 @@
-module Example where
+module Language.RuScript.Example where
 
-import Codegen
-import AST
+import Language.RuScript.Codegen
+import Language.RuScript.AST
 
 {-
     // Example 1

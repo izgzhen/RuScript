@@ -14,12 +14,11 @@ cabal-version:       >=1.10
 
 executable rusc
   main-is:             Main.hs
-  other-modules:       Language.RuScript.Compiler
+  other-modules:       Language.RuScript.Codegen
                        Language.RuScript.Parser
-                       Language.RuScript.Serialize
-                       Language.RuScript.NameSpace
+                       -- Language.RuScript.Serialize
                        Language.RuScript.AST
-                       Language.RuScript.SCode
+                       Language.RuScript.ByteCode
   other-extensions:    FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
                        mtl >=2.2 && <2.3,
@@ -28,6 +27,8 @@ executable rusc
                        bytestring,
                        binary,
                        utf8-string,
-                       split
+                       split,
+                       vector,
+                       lens
   hs-source-dirs:      src
   default-language:    Haskell2010
