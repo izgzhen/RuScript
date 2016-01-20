@@ -83,11 +83,9 @@ instance ToByteCode Expr where
         pushVar x
         emit $ PUSHA attr
 
-    flatten (EInvoke x f exprs) = do
-        let exprs' = reverse exprs
-        flatten exprs'
-        pushVar x
-        emit $ INVOKE f
+    flatten (ECall f exprs) = call f exprs
+
+    flatten (EInvoke x f exprs) = invoke x f exprs
 
     flatten (ENew c exprs) = do
         flatten $ reverse exprs
@@ -119,6 +117,24 @@ instance ToByteCode Statement where
         emit RET
     flatten SBreak      = withLoop $ \_ exitLabel -> emit $ JUMP (Right exitLabel)
 
+    flatten (SInvoke x f exprs) = invoke x f exprs
+    flatten (SCall f exprs) = call f exprs
+
+invoke :: Name -> Name -> [Expr] -> Codegen ()
+invoke x f exprs = do
+    let exprs' = reverse exprs
+    flatten exprs'
+    pushVar x
+    emit $ INVOKE f
+
+call :: Name -> [Expr] -> Codegen ()
+call f exprs = do
+    let exprs' = reverse exprs
+    flatten exprs'
+    i <- indexOfGlobal f
+    emit $ CALL i
+
+
 instance ToByteCode Declaration where
     flatten (FnDecl (FnSig name bindings) stmts) = do
         emit SFUNC
@@ -127,7 +143,7 @@ instance ToByteCode Declaration where
     flatten (ClassDecl x mFather attrs methods) = do
         let concretes = filter (isConcrete . snd) methods
         father_idx <- case mFather of
-            Just x  -> indexOfClass x
+            Just x  -> indexOfGlobal x
             Nothing -> return (-1)
         emit $ CLASS (length attrs) (length concretes) father_idx
         forM_ attrs $ \(_, (s, _)) -> emit $ PUSHSTR s
@@ -225,7 +241,7 @@ emit :: ByteCode -> Codegen ()
 emit code = bytecode %= flip V.snoc code
 
 new :: Name -> Codegen ()
-new x = indexOfClass x >>= emit . NEW
+new x = indexOfGlobal x >>= emit . NEW
 
 withLoop :: (Pos -> Label -> Codegen a) -> Codegen a
 withLoop callback = do
@@ -238,8 +254,8 @@ isConcrete :: Method -> Bool
 isConcrete (Concrete _ _) = True
 isConcrete _ = False
 
-indexOfClass :: Name -> Codegen Int
-indexOfClass name = do
+indexOfGlobal :: Name -> Codegen Int
+indexOfGlobal name = do
     t <- use globalTable
     case M.lookup name t of
         Nothing  -> error $ "can't find class " ++ show name
