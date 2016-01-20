@@ -105,12 +105,18 @@ instance ToByteCode Statement where
         flatten expr
         popVar x
 
-    flatten (SAssign x expr) = do
-        flatten expr
-        popVar x
+    flatten (SAssign lhs expr) = do
+        case lhs of
+            LVar x -> flatten expr >> popVar x
+            LAttr x attr -> do
+                popVar x
+                flatten expr
+                emit $ POPA attr
 
-    flatten (SBBlock b) = flatten b
-    flatten SReturn     = emit RET
+    flatten (SBlock b) = flatten b
+    flatten (SReturn expr) = do
+        flatten expr
+        emit RET
     flatten SBreak      = withLoop $ \_ exitLabel -> emit $ JUMP (Right exitLabel)
 
 instance ToByteCode Declaration where

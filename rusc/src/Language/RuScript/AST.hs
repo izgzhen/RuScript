@@ -15,6 +15,7 @@ data Block = Branch Expr [Statement] [Statement]
 data Expr = EVar Name
           | EGet Name Name
           | EInvoke Name Name [Expr]
+          | ECall Name [Expr]
           | ENew Name [Expr]
           | ELit Literal
           deriving (Show, Eq)
@@ -27,11 +28,18 @@ data Literal = LStr String
 
 -- Linear statement
 data Statement = SVar Binding (Maybe Expr)
-               | SAssign Name Expr
-               | SBBlock Block
-               | SReturn
+               | SAssign LHS Expr
+               | SBlock Block
+               | SInvoke Name Name [Expr]
+               | SCall Name [Expr]
+               | SReturn Expr
                | SBreak
                deriving (Show, Eq)
+
+-- Left hand side
+data LHS = LVar  Name
+         | LAttr Name Name
+         deriving (Show, Eq)
 
 -- Top-level construct
 data FnSig = FnSig Name [Binding] deriving (Show, Eq)

@@ -8,14 +8,14 @@ import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as Tok
 import qualified Text.Parsec.Char as C
 
-parseSrc = testParser pSrc
+parseProgram = testParser pProgram
 
 testParser p = parse p ""
 
 type MyParser = CharParser ()
 
-pSrc :: MyParser Program
-pSrc = Program <$> many (whiteSpace *> pTopLevel <* whiteSpace)
+pProgram :: MyParser Program
+pProgram = Program <$> many (whiteSpace *> pTopLevel <* whiteSpace)
 
 
 pTopLevel :: MyParser (Either Statement Declaration)
@@ -23,19 +23,23 @@ pTopLevel = Left <$> pStatement
         <|> Right <$> (pFuncDecl <|> pClassDecl)
 
 pStatement :: MyParser Statement
-pStatement = SVar <$> (reserved "var" *> pBinding) <*> pMaybeEqualExpr
-         <|> SAssign <$> (pIdent <* pEq) <*> (pExpr <* char ';')
-         <|> reserved "return" *> char ';' *> return SReturn
-         <|> reserved "break" *> char ';' *> return SBreak
-         <|> SBBlock <$> pBBlock
+pStatement = SVar <$> (reserved "var" *> pBinding) <*> pMaybeEqualExpr <* char ';' <* whiteSpace
+         <|> try (SAssign <$> (pLHS <* pEq) <*> (pExpr <* char ';') <* whiteSpace)
+         <|> SReturn <$> (reserved "return" *> pExpr <* char ';' <* whiteSpace)
+         <|> reserved "break" *> char ';' *> return SBreak <* whiteSpace
+         <|> SBlock <$> (pBranch <|> pLoop)
+         <|> try (SInvoke <$> (pIdent <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
+         <|> SCall <$> pIdent <*> pParams <* char ';' <* whiteSpace
+
+pLHS :: MyParser LHS
+pLHS = try (LAttr <$> (pIdent <* char '.') <*> pIdent)
+   <|> LVar <$> pIdent
 
 pMaybeEqualExpr :: MyParser (Maybe Expr)
-pMaybeEqualExpr = try (Just <$> (char '=' *> pExpr))
+pMaybeEqualExpr = try (Just <$> (whiteSpace *> char '=' *> whiteSpace *> pExpr))
               <|> return Nothing
 
-
-pBBlock = pBranch <|> pLoop
-
+pBranch :: MyParser Block
 pBranch = do
     reserved "if"
     whiteSpace
@@ -43,10 +47,11 @@ pBranch = do
     whiteSpace
     cb1 <- braces (many pStatement)
     whiteSpace
-    reserved "then"
+    reserved "else"
     cb2 <- braces (many pStatement)
     return $ Branch cond cb1 cb2
 
+pLoop :: MyParser Block
 pLoop = do
     reserved "while"
     whiteSpace
@@ -58,10 +63,12 @@ pLoop = do
 pClassDecl :: MyParser Declaration
 pClassDecl = do
     reserved "class"
+    whiteSpace
     className <- pIdent
+    whiteSpace
     mInherits <- try pInherit
     (as, ms) <- braces $ do
-        as <- many pAttr
+        as <- many $ try ((,) <$> pVisibility <*> pBinding)
         ms <- many ((,) <$> pVisibility <*> pMethod)
         return (as, ms)
     return $ ClassDecl className mInherits as ms
@@ -69,8 +76,6 @@ pClassDecl = do
 pVisibility :: MyParser Visibility
 pVisibility = try (return Private <* reserved "private")
           <|> return Public
-
-pAttr = (,) <$> pVisibility <*> pBinding
 
 pInherit :: MyParser (Maybe String)
 pInherit = Just <$> (reserved "inherits" *> pIdent)
@@ -89,11 +94,9 @@ pFnSig = do
     whiteSpace
     name <- pIdent
     whiteSpace
-    args <- pArgs
+    args <- whiteSpace *> (parens $ pBinding `sepEndBy` (char ',' <* whiteSpace))
     whiteSpace
     return $ FnSig name args
-
-pArgs = whiteSpace *> (parens $ pBinding `sepEndBy` (char ',' <* whiteSpace))
 
 pBinding :: MyParser Binding
 pBinding = (,) <$> (pIdent <* whiteSpace) <*> (char ':' *> (whiteSpace *> pType))
@@ -104,28 +107,37 @@ pType = reserved "Int" *> return TyInt
     <|> reserved "Str" *> return TyStr
     <|> TyClass <$> pIdent
 
-pExpr =  ELit <$> pLit
-     <|> pNew
-     <|> try pInvoke
-     <|> try pGet
-     <|> EVar <$> pIdent
+pExpr :: MyParser Expr
+pExpr = pNew
+    <|> try (EInvoke <$> (pIdent <* char '.') <*> pIdent <*> pParams)
+    <|> try pGet
+    <|> ELit <$> pLit
+    <|> try (ECall <$> pIdent <*> pParams)
+    <|> EVar <$> pIdent
 
-pNew  = ENew <$> (reserved "new" *> pIdent) <*> parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
+pNew :: MyParser Expr
+pNew  = ENew <$> (reserved "new" *> pIdent) <*> pParams
 
-pInvoke = EInvoke <$> (pIdent <* char '.') <*> pIdent <*> parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
+pParams :: MyParser [Expr]
+pParams = parens (pExpr `sepEndBy` (char ',' <* whiteSpace))
 
+pGet :: MyParser Expr
 pGet = EGet <$> (pIdent <* char '.') <*> pIdent
 
-pLit = LStr <$> parseString
-   <|> (\s -> LInt (read s :: Int)) <$> many digit
-   <|> LBool <$> (reserved "True"  *> return True
-              <|> reserved "False" *> return False)
+pLit :: MyParser Literal
+pLit = try (LBool <$> pBool)
+   <|> LStr <$> parseString
+   <|> LInt . fromInteger <$> pInt
+
+pBool :: MyParser Bool
+pBool = reserved "True"  *> return True
+    <|> reserved "False" *> return False
 
 --------- LangDef -----------
 
 pEq   = whiteSpace *> reservedOp "="
 
-reservedNames = ["class", "fn", "new", "return", "break", "while", "if", "then", "private", "virtual", "var"]
+reservedNames = ["class", "fn", "new", "return", "break", "while", "if", "else", "private", "virtual", "var"]
 reservedOpNames = ["=", "+"]
 
 langDef :: Tok.LanguageDef ()

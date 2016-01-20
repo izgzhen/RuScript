@@ -1,33 +1,31 @@
 # Demo of RuScript
 
+class X inherits Y {
+    private a : Int
+    b : Bool
 
-class example {
-    a;
-    b;
-    fn add(self) {
-        return self.a + self.b;
+    fn add(x: Int) {
+        if (self.b) {
+            return a.add(x);
+        }
+        else {
+            return x;
+        }
     }
-};
+
+    virtual fn minus(y: Int)
+}
 
 
-a = 1;
-b = 2;
+var a : Int = 1;
+var b : Bool = True;
 
-class example2 {
-    fn bridge(self) {
-        global a;
-        global b;
-        obj = new example(a, b);
-        return obj.add();
-    }
-};
+var c : X = new X(a, b);
 
+a = 2;
 
-obj2 = new example2();
-
-
-c = obj2.bridge(); # c should be 3
-print c;
-
+while(b) {
+    c.print();
+}
 
 # print obj.a; # show be 1
