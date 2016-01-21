@@ -13,7 +13,7 @@ use env::Env;
 use dispatch::*;
 
 pub trait Object : Trace {
-    fn invoke(&mut self, name: &str, stack: &mut Vec<Gc<DynObj>>, env: &Env);
+    fn invoke(&self, name: &str, stack: &mut Vec<Gc<DynObj>>, env: &Env);
 
     fn get(&self, name: &str, env: &Env) -> Gc<DynObj> {
         access_fail(&self.tyof(), name)

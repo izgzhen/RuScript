@@ -26,13 +26,13 @@ pub enum DynObj {
 
 /// Dispatch Object trait calls explicitly at runtime
 impl Object for DynObj {
-    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
+    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
         match self {
-            &mut Int(ref mut intobj) => intobj.invoke(name, stack, env),
-            &mut Bool(ref mut arrobj) => arrobj.invoke(name, stack, env),
-            &mut Str(ref mut strobj) => strobj.invoke(name, stack, env),
-            &mut Ist(ref mut istobj) => istobj.invoke(name, stack, env),
-            &mut Non => panic!("Non object is not usable"),
+            &Int(ref intobj) => intobj.invoke(name, stack, env),
+            &Bool(ref arrobj) => arrobj.invoke(name, stack, env),
+            &Str(ref strobj) => strobj.invoke(name, stack, env),
+            &Ist(ref istobj) => istobj.invoke(name, stack, env),
+            &Non => panic!("Non object is not usable"),
         }
     }
 

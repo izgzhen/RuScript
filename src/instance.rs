@@ -38,7 +38,7 @@ impl InstanceObj {
 impl Object for InstanceObj {
     /// We can't invoke internally because the class's methods will
     /// be checked first.
-    fn invoke(&mut self, name: &str, _: &mut Vec<Gc<DynObj>>, _: &Env) {
+    fn invoke(&self, name: &str, _: &mut Vec<Gc<DynObj>>, _: &Env) {
         invoke_fail("InstanceObj", name)
     }
 

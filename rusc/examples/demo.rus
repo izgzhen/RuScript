@@ -36,4 +36,4 @@ while(b) {
     a = c.minus(a);
 }
 
-# print obj.a; # show be 1
+a.print();

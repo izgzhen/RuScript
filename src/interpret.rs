@@ -22,9 +22,6 @@ pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
 
     let mut pc: usize = 0;
     while pc < code.len() {
-        // Debug code
-        println!("Intrepreting {:?}", code[pc]);
-
         // Dealing with frame control instructions
         match code[pc] {
             // Call global function
@@ -52,8 +49,11 @@ pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
                             }
                         }
                     },
-                    _ => { panic!("Wrong type of receiver"); }
-                }
+                    _ => {
+                        recv.invoke(mtd_name, stack, env);
+                    },
+                };
+                pc = pc + 1
             },
             RET => {
                 return;

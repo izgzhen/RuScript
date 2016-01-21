@@ -46,7 +46,7 @@ impl StrObj {
 
 impl Object for IntObj {
     /// Built-in functions: `add`, `print`
-    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
+    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "add" => {
                 let b = stack.pop().unwrap();
@@ -72,7 +72,7 @@ impl Object for IntObj {
 
 impl Object for BoolObj {
     /// Built-in functions: `not`, `print`
-    fn invoke(&mut self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env){
+    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env){
         match name {
             "not" => {
                 stack.push(BoolObj::new(!self.val));
@@ -89,7 +89,7 @@ impl Object for BoolObj {
 
 impl Object for StrObj {
     /// Built-in functions: `print`
-    fn invoke(&mut self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
+    fn invoke(&self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "print" => {
                 print!("{}", self.val);

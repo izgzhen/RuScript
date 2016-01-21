@@ -277,6 +277,10 @@ getAttrs cls = do
 builtInMethods :: M.Map (Type, Name) FnSig
 builtInMethods = M.fromList [
       ((TyInt, "add"), FnSig "add" [("x", TyInt)] (Just TyInt))
+    , ((TyInt, "print"), FnSig "print" [] Nothing)
+    , ((TyBool, "not"), FnSig "not" [] Nothing)
+    , ((TyInt, "print"), FnSig "print" [] Nothing)
+    , ((TyStr, "print"), FnSig "print" [] Nothing)
     ]
 
 builtInAttrs :: M.Map (Type, Name) Type
