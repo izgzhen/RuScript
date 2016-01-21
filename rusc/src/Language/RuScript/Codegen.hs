@@ -185,6 +185,8 @@ instance ToByteCode Program where
         let topStmts = lefts mixed
         flatten declarations
         flatten topStmts
+        nLocals <- M.size <$> use symbolTable
+        emit $ PUSHINT nLocals
 
 -- Helpers
 

@@ -19,11 +19,12 @@ pub struct Env {
 
 /// Load bytes from a file handler, deserialize, split top-level
 /// statements from declarations
-pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
+pub fn load(f: &mut File) -> (Env, Vec<ByteCode>, usize) {
     let mut classes   = vec![];
     let mut functions = vec![];
     let mut top_code  = vec![];
     let mut bytes: Vec<u8> = Vec::new();
+    let mut top_n: usize;
 
     match Read::read_to_end(f, &mut bytes) {
         Ok(len) => {
@@ -37,7 +38,7 @@ pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
             }
 
             let mut pc = 0;
-            while pc < code.len() {
+            while pc < (code.len() - 1) {
                 match code[pc] {
                     ByteCode::CLASS(nattrs, nmtds, father_idx) => {
                         pc = pc + 1;
@@ -55,11 +56,16 @@ pub fn load(f: &mut File) -> (Env, Vec<ByteCode>) {
                     }
                 }
             }
+
+            match code[code.len() - 1] {
+                ByteCode::PUSHINT(i) => top_n = i as usize,
+                _ => panic!("The program doesn't end with top-level variables number")
+            }
         },
         Err(e) => {
             panic!("reading bytes error: {}", e);
         }
     }
 
-    (Env { classes : classes, functions : functions }, top_code)
+    (Env { classes : classes, functions : functions }, top_code, top_n)
 }
