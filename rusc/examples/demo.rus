@@ -33,7 +33,7 @@ var c : X = new X(a, b);
 a = 2;
 
 while(b) {
-    c.print();
+    a = c.minus(a);
 }
 
 # print obj.a; # show be 1

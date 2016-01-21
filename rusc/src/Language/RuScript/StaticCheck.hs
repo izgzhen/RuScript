@@ -24,10 +24,10 @@ import Data.Either
 import qualified Data.List as L
 
 data StaticState = StaticState {
-  _localTable :: M.Map Name Type
-, _funcTable  :: M.Map Name FnSig
-, _classTable :: M.Map Name ClassType
-, _enclosed   :: Maybe FnSig
+  _localTable  :: M.Map Name Type
+, _funcTable   :: M.Map Name FnSig
+, _classTable  :: M.Map Name ClassType
+, _enclosedRet :: Maybe Type
 }
 
 data ClassType = ClassType {
@@ -36,10 +36,16 @@ data ClassType = ClassType {
 , _mtdTable  :: M.Map Name FnSig
 }
 
+initStaticState :: StaticState
+initStaticState = StaticState M.empty M.empty M.empty Nothing
+
 makeLenses ''StaticState
 makeLenses ''ClassType
 
 type Static = ExceptT String (State StaticState)
+
+checkProgram :: Program -> Either String ()
+checkProgram prog = evalState (runExceptT (check prog)) initStaticState
 
 class Check a where
     check :: a -> Static ()
@@ -57,7 +63,7 @@ instance Check Program where
 instance Check Declaration where
     check (FnDecl sig stmts) = do
         addFnSig sig
-        inLocal sig $ check stmts
+        inFunc sig $ check stmts
 
     check (ClassDecl name mInherit attrs methods) = do
         addEmptyClass name mInherit
@@ -160,12 +166,35 @@ addFnSig :: FnSig -> Static ()
 addFnSig sig@(FnSig name _ _) = funcTable %= M.insert name sig
 
 
-inLocal :: FnSig -> Static a -> Static a
-inLocal sig m = do
-    enclosed .= Just sig
+inMethod :: Name -> FnSig -> Static a -> Static a
+inMethod cls (FnSig _ bindings mRet) m = do
+    case mRet of
+        Just ty -> enclosedRet .= Just ty
+        Nothing -> return ()
+
+    old <- use localTable
+    localTable .= M.fromList (bindings ++ [("self", TyClass cls)])
     ret <- m
-    enclosed .= Nothing
+
+    enclosedRet .= Nothing
+    localTable .= old
     return ret
+
+
+inFunc :: FnSig -> Static a -> Static a
+inFunc (FnSig _ bindings mRet) m = do
+    case mRet of
+        Just ty -> enclosedRet .= Just ty
+        Nothing -> return ()
+
+    old <- use localTable
+    localTable .= M.fromList bindings
+    ret <- m
+
+    enclosedRet .= Nothing
+    localTable .= old
+    return ret
+
 
 addEmptyClass :: Name -> (Maybe Name) -> Static ()
 addEmptyClass name mInherit =
@@ -179,7 +208,7 @@ addMethod name = \case
     Virtual sig        -> addMethod' sig
     Concrete sig stmts -> do
         addMethod' sig
-        inLocal sig $ check stmts
+        inMethod name sig $ check stmts
     where
         addMethod' :: FnSig -> Static ()
         addMethod' sig@(FnSig x _ _) =
@@ -216,9 +245,9 @@ getSigOfFunc f = do
 
 getEncloseFuncRetTy :: Static Type
 getEncloseFuncRetTy = do
-    e <- use enclosed
+    e <- use enclosedRet
     case e of
-        Just (FnSig _ _ (Just retty)) -> return retty
+        Just retty -> return retty
         Nothing -> throwError "can't find return type of enclosed function environment"
 
 lookUpLocalVar :: Name -> Static Type
@@ -246,7 +275,9 @@ getAttrs cls = do
         _ -> throwError $ "can't get attributes of class " ++ cls
 
 builtInMethods :: M.Map (Type, Name) FnSig
-builtInMethods = M.empty
+builtInMethods = M.fromList [
+      ((TyInt, "add"), FnSig "add" [("x", TyInt)] (Just TyInt))
+    ]
 
 builtInAttrs :: M.Map (Type, Name) Type
 builtInAttrs = M.empty
@@ -255,12 +286,12 @@ queryBuiltinMethod :: Name -> Type -> Static FnSig
 queryBuiltinMethod name ty =
     case M.lookup (ty, name) builtInMethods of
         Just sig -> return sig
-        Nothing  -> throwError $ show ty ++ " doesn't have " ++ name ++ " method builtin"
+        Nothing  -> throwError $ show ty ++ " doesn't have \"" ++ name ++ "\" method builtin"
 
 
 queryBuiltinAttr :: Name -> Type -> Static Type
 queryBuiltinAttr name ty = 
     case M.lookup (ty, name) builtInAttrs of
         Just ty -> return ty
-        Nothing -> throwError $ show ty ++ " doesn't have " ++ name ++ " method builtin"
+        Nothing -> throwError $ show ty ++ " doesn't have \"" ++ name ++ "\" method builtin"
 

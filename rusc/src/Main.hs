@@ -7,7 +7,10 @@ import Data.Binary (encode)
 import Language.RuScript.Serialize
 import Language.RuScript.Codegen
 import Language.RuScript.Parser
+import Language.RuScript.StaticCheck
 
+
+main :: IO ()
 main = do
     hSetBuffering stdout NoBuffering
     args <- getArgs
@@ -16,6 +19,9 @@ main = do
         let target = args !! 1
         case parseProgram txt of
             Left err -> putStrLn $ "Error in parsing: " ++ show err
-            Right src -> printCode $ runCodegen src
+            Right program -> do
+                case checkProgram program of
+                    Left err -> putStrLn err
+                    Right _  -> printCode $ runCodegen program
         else putStrLn "usage: rusc <source> <target>"
 
