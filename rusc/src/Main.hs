@@ -1,8 +1,6 @@
 import System.IO hiding (writeFile)
 import System.Environment
 import Prelude hiding (writeFile, concat)
-import Data.ByteString.Lazy (writeFile, concat)
-import Data.Binary (encode)
 
 import Language.RuScript.Serialize
 import Language.RuScript.Codegen

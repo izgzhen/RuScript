@@ -65,8 +65,8 @@ instance Check Declaration where
         addFnSig sig
         inFunc sig $ check stmts
 
-    check (ClassDecl name mInherit attrs methods) = do
-        addEmptyClass name mInherit
+    check (ClassDecl name mFather attrs methods) = do
+        addEmptyClass name mFather
         mapM_ (\(_, binding) -> addAttr name binding) attrs
         mapM_ (\(_, method)  -> addMethod name method) methods
 
@@ -132,9 +132,9 @@ instance Infer Expr where
 
     infer (EInvoke x f params) = do
         ty <- infer x
-        sig@(FnSig _ _ (Just ty)) <- getSigFromType f ty
+        sig@(FnSig _ _ (Just retty)) <- getSigFromType f ty
         checkFunc sig params
-        return ty
+        return retty
 
     infer (ECall f params) = do
         sig@(FnSig _ _ (Just ty)) <- getSigOfFunc f
@@ -197,8 +197,8 @@ inFunc (FnSig _ bindings mRet) m = do
 
 
 addEmptyClass :: Name -> (Maybe Name) -> Static ()
-addEmptyClass name mInherit =
-    classTable %= M.insert name (ClassType mInherit M.empty M.empty)
+addEmptyClass name mFather =
+    classTable %= M.insert name (ClassType mFather M.empty M.empty)
 
 addAttr :: Name -> Binding -> Static ()
 addAttr name (x, ty) = classTable %= M.update (Just . over attrTable (M.insert x ty)) name
@@ -263,7 +263,7 @@ lookUpAttr ty name = do
         TyClass cls -> do
             bindings <- getAttrs cls
             case L.lookup name bindings of
-                Just ty -> return ty
+                Just attrTy -> return attrTy
                 Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ cls
         other -> queryBuiltinAttr name other
 
@@ -292,6 +292,6 @@ queryBuiltinMethod name ty =
 queryBuiltinAttr :: Name -> Type -> Static Type
 queryBuiltinAttr name ty = 
     case M.lookup (ty, name) builtInAttrs of
-        Just ty -> return ty
+        Just attrty -> return attrty
         Nothing -> throwError $ show ty ++ " doesn't have \"" ++ name ++ "\" method builtin"
 

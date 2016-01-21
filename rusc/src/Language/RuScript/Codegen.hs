@@ -5,11 +5,9 @@ module Language.RuScript.Codegen where
 import Control.Monad.State
 import qualified Data.Vector as V
 import qualified Data.Map as M
-import Control.Arrow
 import Data.Either
 import Control.Lens
 import Data.Maybe (fromJust)
-import Debug.Trace
 
 import Language.RuScript.AST
 import Language.RuScript.ByteCode
@@ -149,7 +147,7 @@ instance ToByteCode Declaration where
         let concretes = filter (isConcrete . snd) methods
 
         father_idx <- case mFather of
-            Just x  -> lookupClass x
+            Just i  -> lookupClass i
             Nothing -> return (-1)
         emit $ CLASS (length attrs) (length concretes) father_idx
         forM_ attrs $ \(_, (s, _)) -> emit $ PUSHSTR s
@@ -161,7 +159,7 @@ instance ToByteCode a => ToByteCode [a] where
     flatten = mapM_ flatten
 
 flattenFunc :: (Maybe Name) -> String -> [Binding] -> [Statement] -> Codegen ()
-flattenFunc mClsName name bindings stmts = do
+flattenFunc mClsName _ bindings stmts = do
         nLocals <- inScope mClsName bindings $ do
             flatten stmts
             nLocals <- M.size <$> use symbolTable

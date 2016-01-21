@@ -6,11 +6,11 @@ import Language.RuScript.AST
 
 import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as Tok
-import qualified Text.Parsec.Char as C
 
-parseProgram = testParser pProgram
+parseProgram :: String -> Either ParseError Program
+parseProgram = parse pProgram ""
 
-testParser p = parse p ""
+-- testParser p = parse p ""
 
 type MyParser = CharParser ()
 
@@ -141,10 +141,8 @@ pBool = reserved "True"  *> return True
 
 --------- LangDef -----------
 
+pEq :: MyParser ()
 pEq   = whiteSpace *> reservedOp "="
-
-reservedNames = ["class", "fn", "new", "return", "break", "while", "if", "else", "private", "virtual", "var"]
-reservedOpNames = ["=", "+"]
 
 langDef :: Tok.LanguageDef ()
 langDef = Tok.LanguageDef {
@@ -156,10 +154,11 @@ langDef = Tok.LanguageDef {
 , Tok.identLetter  = alphaNum <|> oneOf "_'"
 , Tok.opStart      = oneOf ":!#$%&*+./<=>?@\\^|-~"
 , Tok.opLetter     = oneOf ":!#$%&*+./<=>?@\\^|-~"
-, Tok.reservedNames = reservedNames
-, Tok.reservedOpNames = reservedOpNames
+, Tok.reservedNames = ["class", "fn", "new", "return", "break", "while", "if", "else", "private", "virtual", "var"]
+, Tok.reservedOpNames = ["="]
 , Tok.caseSensitive = True
 }
+
 
 lexer = Tok.makeTokenParser langDef
 

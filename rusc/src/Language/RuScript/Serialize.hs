@@ -2,7 +2,7 @@ module Language.RuScript.Serialize where
 
 import Language.RuScript.ByteCode
 
-import Data.Word (Word8, Word32)
+-- import Data.Word (Word8, Word32)
 import Data.Binary
 import Control.Monad
 import Data.ByteString.UTF8 (fromString)
@@ -13,7 +13,7 @@ import Data.Bits (shiftL)
 data Segment = Segment Word8 [Word32] deriving Show
 
 inBytes :: Segment -> Word8
-inBytes (Segment opcode operands) = fromIntegral (1 + length operands * 4)
+inBytes (Segment _ operands) = fromIntegral (1 + length operands * 4)
 
 instance Binary Segment where
     put seg@(Segment opcode operands) = do
@@ -44,7 +44,8 @@ serialize (PUSHINT i)       = segify 12 [i]
 serialize (PUSHBOOL i)      = segify 13 [i]
 serialize (CLASS i1 i2 i3)  = segify 14 [i1, i2, i3]
 serialize SFUNC             = segify 15 []
-serialize (EBODY i)         = segify 16 []
+serialize (EBODY i)         = segify 16 [i]
+serialize other             = error $ "can't serialize" ++ show other
 
 -- serialize x = error $ "unimplelemented serialization of: " ++ show x
 
