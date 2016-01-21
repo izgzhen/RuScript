@@ -36,12 +36,12 @@ makeLenses ''CodegenState
 -- flatten a block into the linear address space, return
 -- the next new address after the allocated space
 
-printCode :: V.Vector ByteCode -> IO ()
-printCode v = mapM_ (\(i, c) -> putStrLn $ show i ++ " : " ++ show c) $ zip [0..] (V.toList v)
+printCode :: [ByteCode] -> IO ()
+printCode v = mapM_ (\(i, c) -> putStrLn $ show i ++ " : " ++ show c) $ zip [0..] v
 
-runCodegen :: ToByteCode a => a -> V.Vector ByteCode
+runCodegen :: ToByteCode a => a -> [ByteCode]
 runCodegen a = let s = execState (flatten a) initState
-               in  delabel (_bytecode s) (_labelPos s)
+               in  V.toList $ delabel (_bytecode s) (_labelPos s)
 
 delabel :: V.Vector ByteCode -> M.Map Label Pos -> V.Vector ByteCode
 delabel v m = V.imap f v

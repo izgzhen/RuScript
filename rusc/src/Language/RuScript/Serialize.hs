@@ -12,14 +12,15 @@ import Data.Bits (shiftL)
 
 data Segment = Segment Word8 [Word32] deriving Show
 
+-- 32 bit per operand
 inBytes :: Segment -> Word8
 inBytes (Segment _ operands) = fromIntegral (1 + length operands * 4)
 
 instance Binary Segment where
     put seg@(Segment opcode operands) = do
-        put $ inBytes seg
-        put opcode
-        forM_ operands put
+        put $ inBytes seg   -- One byte: length of following payload in bytes
+        put opcode          -- One byte: opcode
+        forM_ operands put  -- 4 * number of operands bytes
 
     get = do
         bytes <- get :: Get Word8

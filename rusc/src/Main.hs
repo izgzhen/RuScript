@@ -1,6 +1,8 @@
 import System.IO hiding (writeFile)
 import System.Environment
 import Prelude hiding (writeFile, concat)
+import Data.ByteString.Lazy (writeFile, concat)
+import Data.Binary (encode)
 
 import Language.RuScript.Serialize
 import Language.RuScript.Codegen
@@ -20,6 +22,9 @@ main = do
             Right program -> do
                 case checkProgram program of
                     Left err -> putStrLn err
-                    Right _  -> printCode $ runCodegen program
+                    Right _  -> do
+                        let bytecode = runCodegen program
+                        printCode bytecode
+                        writeFile target (concat $ map (encode . serialize) bytecode)
         else putStrLn "usage: rusc <source> <target>"
 
