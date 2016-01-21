@@ -1,7 +1,7 @@
 # Demo of RuScript
 
 class Y {
-    virtual fn minus(y: Int) -> Int
+    virtual fn id(y: Int) -> Int
 }
 
 class X inherits Y {
@@ -19,7 +19,7 @@ class X inherits Y {
         }
     }
 
-    fn minus(y: Int) -> Int {
+    fn id(y: Int) -> Int {
         return y;
     }
 }
@@ -33,7 +33,7 @@ var c : X = new X(a, b);
 a = 2;
 
 while(b) {
-    a = c.minus(a);
+    a = c.id(a);
 }
 
 a.print();

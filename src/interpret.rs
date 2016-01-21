@@ -120,9 +120,9 @@ pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
         },
         &PUSHBOOL(i) => {
             if i == 0 {
-                stack.push(BoolObj::new(true));
-            } else {
                 stack.push(BoolObj::new(false));
+            } else {
+                stack.push(BoolObj::new(true));
             }
         },
         other => { panic!("{:?}'s interpretation is not implemented", other) }
