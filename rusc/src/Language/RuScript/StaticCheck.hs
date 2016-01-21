@@ -21,6 +21,7 @@ import Control.Monad.Except
 import Control.Monad.State
 import Control.Lens
 import Data.Either
+import qualified Data.List as L
 
 data StaticState = StaticState {
   _localTable :: M.Map Name Type
@@ -196,9 +197,6 @@ addBinding (x, ty) = localTable %= M.insert x ty
 
 getSigFromType :: Name -> Type -> Static FnSig
 getSigFromType method = \case
-    TyInt       -> queryBuiltin method TyInt
-    TyBool      -> queryBuiltin method TyBool
-    TyStr       -> queryBuiltin method TyStr
     TyClass cls -> do
         t <- use classTable
         case M.lookup cls t of
@@ -206,26 +204,63 @@ getSigFromType method = \case
                 Just sig -> return sig
                 Nothing -> throwError $ "has no idea of method " ++ method
             Nothing -> throwError $ "has no idea of class " ++ cls
+    other       -> queryBuiltinMethod method other
 
 
 getSigOfFunc :: Name -> Static FnSig
-getSigOfFunc = undefined
+getSigOfFunc f = do
+    t <- use funcTable
+    case M.lookup f t of
+        Just sig -> return sig
+        Nothing  -> throwError $ "can't find signature of " ++ f
 
 getEncloseFuncRetTy :: Static Type
-getEncloseFuncRetTy = undefined
-
+getEncloseFuncRetTy = do
+    e <- use enclosed
+    case e of
+        Just (FnSig _ _ (Just retty)) -> return retty
+        Nothing -> throwError "can't find return type of enclosed function environment"
 
 lookUpLocalVar :: Name -> Static Type
-lookUpLocalVar = undefined
+lookUpLocalVar x = do
+    t <- use localTable
+    case M.lookup x t of
+        Just ty -> return ty
+        Nothing -> throwError $ "can't find type of variable " ++ x
 
 lookUpAttr :: Type -> Name -> Static Type
-lookUpAttr = undefined
-
+lookUpAttr ty name = do
+    case ty of
+        TyClass cls -> do
+            bindings <- getAttrs cls
+            case L.lookup name bindings of
+                Just ty -> return ty
+                Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ cls
+        other -> queryBuiltinAttr name other
 
 getAttrs :: Name -> Static [Binding]
-getAttrs = undefined
+getAttrs cls = do
+    t <- use classTable
+    case M.lookup cls t of
+        Just (ClassType _ attrs _) -> return $ M.toList attrs
+        _ -> throwError $ "can't get attributes of class " ++ cls
+
+builtInMethods :: M.Map (Type, Name) FnSig
+builtInMethods = M.empty
+
+builtInAttrs :: M.Map (Type, Name) Type
+builtInAttrs = M.empty
+
+queryBuiltinMethod :: Name -> Type -> Static FnSig
+queryBuiltinMethod name ty =
+    case M.lookup (ty, name) builtInMethods of
+        Just sig -> return sig
+        Nothing  -> throwError $ show ty ++ " doesn't have " ++ name ++ " method builtin"
 
 
+queryBuiltinAttr :: Name -> Type -> Static Type
+queryBuiltinAttr name ty = 
+    case M.lookup (ty, name) builtInAttrs of
+        Just ty -> return ty
+        Nothing -> throwError $ show ty ++ " doesn't have " ++ name ++ " method builtin"
 
-queryBuiltin :: Name -> Type -> Static FnSig
-queryBuiltin = undefined

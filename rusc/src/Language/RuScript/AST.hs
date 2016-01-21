@@ -4,7 +4,7 @@ type Name = String
 type Binding = (Name, Type)
 
 -- Type
-data Type = TyInt | TyBool | TyStr | TyClass Name deriving (Show, Eq)
+data Type = TyInt | TyBool | TyStr | TyClass Name deriving (Show, Eq, Ord)
 
 -- Basic Block
 data Block = Branch Expr [Statement] [Statement]
