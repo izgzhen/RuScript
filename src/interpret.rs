@@ -13,119 +13,132 @@ use class::*;
 use instance::InstanceObj;
 use super::*;
 use primitives::*;
+use cmdopt::CmdOpt;
 
+/// Interpreter State
+pub struct Interpreter {
+    cmd_opt : CmdOpt,
+}
 
-/// Initialize and execute a frame
-pub fn runFrame(env: &Env, stack: &mut Vec<Gc<DynObj>>,
-                n_locals: usize, code: &Vec<ByteCode>) {
-    let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
+impl Interpreter {
+    #[inline]
+    pub fn new(opt: CmdOpt) -> Interpreter {
+        Interpreter {
+            cmd_opt : opt,
+        }
+    }
 
-    let mut pc: usize = 0;
-    while pc < code.len() {
-        // Dealing with frame control instructions
-        match code[pc] {
-            // Call global function
-            CALL(fn_idx) => {
-                let function: &Function = &env.functions[fn_idx as usize];
-                runFrame(env, stack, function.n_locals, &function.code);
-                pc = pc + 1;
-            },
-            // Invoke method of instance (TOS)
-            INVOKE(ref mtd_name) => {
-                let mut recv: Gc<DynObj> = stack.pop().unwrap();
-                match *recv {
-                    // Check type at runtime
-                    DynObj::Ist(ref istobj) => {
-                        let class: &Class = &env.classes[istobj.cls as usize];
-                        // `this` pointer
-                        stack.push(recv.clone());
-                        match class.get_method(mtd_name, env) {
-                            Some(ref function) => {
-                                runFrame(env, stack, function.n_locals, &function.code);
-                                pc = pc + 1;
-                            },
-                            None => { 
-                                panic!("FATAL: invoke built-in methods on instance")
+    /// Initialize and execute a frame
+    pub fn run_frame(&self, env: &Env, stack: &mut Vec<Gc<DynObj>>,
+                     n_locals: usize, code: &Vec<ByteCode>) {
+        let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
+
+        let mut pc: usize = 0;
+        while pc < code.len() {
+            // Dealing with frame control instructions
+            match code[pc] {
+                // Call global function
+                CALL(fn_idx) => {
+                    let function: &Function = &env.functions[fn_idx as usize];
+                    self.run_frame(env, stack, function.n_locals, &function.code);
+                    pc = pc + 1;
+                },
+                // Invoke method of instance (TOS)
+                INVOKE(ref mtd_name) => {
+                    let recv: Gc<DynObj> = stack.pop().unwrap();
+                    match *recv {
+                        // Check type at runtime
+                        DynObj::Ist(ref istobj) => {
+                            let class: &Class = &env.classes[istobj.cls as usize];
+                            // `this` pointer
+                            stack.push(recv.clone());
+                            match class.get_method(mtd_name, env) {
+                                Some(ref function) => {
+                                    self.run_frame(env, stack, function.n_locals, &function.code);
+                                    pc = pc + 1;
+                                },
+                                None => { 
+                                    panic!("FATAL: invoke built-in methods on instance")
+                                }
                             }
-                        }
-                    },
-                    _ => {
-                        recv.invoke(mtd_name, stack, env);
-                    },
-                };
-                pc = pc + 1
-            },
-            RET => {
-                return;
-            },
-            ref other => {
-                interpret(env, other, stack, &mut locals, &mut pc);
-                pc = pc + 1;
+                        },
+                        _ => {
+                            recv.invoke(mtd_name, stack, env);
+                        },
+                    };
+                    pc = pc + 1
+                },
+                RET => {
+                    return;
+                },
+                ref other => {
+                    self.interpret(env, other, stack, &mut locals, &mut pc);
+                    pc = pc + 1;
+                }
             }
         }
     }
-}
 
-
-/// Interpret in-frame instructions
-pub fn interpret(env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
+    /// Interpret in-frame instructions
+    fn interpret(&self, env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
                  locals: &mut Vec<Gc<DynObj>>, pc: &mut usize) {
-    match inst {
-        &JUMP(offset) => {
-            // offset might be negative
-            *pc = (*pc as Integer + offset) as usize;
-        },
-        &JUMPT(offset) => {
-            jump_if(stack, pc, true, offset);
-        },
-        &JUMPF(offset) => {
-            jump_if(stack, pc, false, offset);
-        },
-        &PUSH(idx) => {
-            stack.push(locals[idx as usize].clone());
-        },
-        &POP(idx) => {
-            let obj = stack.pop().unwrap();
-            locals[idx as usize] = obj.clone();
-        },
-        &NEW(cls_idx) => {
-            let class: &Class = &env.classes[cls_idx as usize];
-            let obj = InstanceObj::new(class.attrs.len(), cls_idx as usize, stack);
-            stack.push(obj);
-        },
-        &PUSHA(ref attr_name) => {
-            let tos = stack.pop().unwrap();
-            stack.push(tos.get(attr_name, env));
-        },
-        &POPA(ref attr_name) => {
-            let tos = stack.pop().unwrap();
-            let mut ntos_copy: DynObj = (*stack.pop().unwrap()).clone();
-            ntos_copy.set(attr_name, &tos, env);
-            stack.push(Gc::new(ntos_copy));
+        match inst {
+            &JUMP(offset) => {
+                // offset might be negative
+                *pc = (*pc as Integer + offset) as usize;
+            },
+            &JUMPT(offset) => {
+                jump_if(stack, pc, true, offset);
+            },
+            &JUMPF(offset) => {
+                jump_if(stack, pc, false, offset);
+            },
+            &PUSH(idx) => {
+                stack.push(locals[idx as usize].clone());
+            },
+            &POP(idx) => {
+                let obj = stack.pop().unwrap();
+                locals[idx as usize] = obj.clone();
+            },
+            &NEW(cls_idx) => {
+                let class: &Class = &env.classes[cls_idx as usize];
+                let obj = InstanceObj::new(class.attrs.len(), cls_idx as usize, stack);
+                stack.push(obj);
+            },
+            &PUSHA(ref attr_name) => {
+                let tos = stack.pop().unwrap();
+                stack.push(tos.get(attr_name, env));
+            },
+            &POPA(ref attr_name) => {
+                let tos = stack.pop().unwrap();
+                let mut ntos_copy: DynObj = (*stack.pop().unwrap()).clone();
+                ntos_copy.set(attr_name, &tos, env);
+                stack.push(Gc::new(ntos_copy));
 
-            /*
-                Although in fact we copied the object entirely, but only
-                pointers are copied so the time overhead is not significant.
+                /*
+                    Although in fact we copied the object entirely, but only
+                    pointers are copied so the time overhead is not significant.
 
-                Beyond that, the original NTOS is popped out and will be
-                garbage-collected sometime, so the references to the unmodified
-                parts are actually intact.
-             */
-        },
-        &PUSHSTR(ref s) => {
-            stack.push(StrObj::new(s.clone()));
-        },
-        &PUSHINT(i) => {
-            stack.push(IntObj::new(i));
-        },
-        &PUSHBOOL(i) => {
-            if i == 0 {
-                stack.push(BoolObj::new(false));
-            } else {
-                stack.push(BoolObj::new(true));
-            }
-        },
-        other => { panic!("{:?}'s interpretation is not implemented", other) }
+                    Beyond that, the original NTOS is popped out and will be
+                    garbage-collected sometime, so the references to the unmodified
+                    parts are actually intact.
+                 */
+            },
+            &PUSHSTR(ref s) => {
+                stack.push(StrObj::new(s.clone()));
+            },
+            &PUSHINT(i) => {
+                stack.push(IntObj::new(i));
+            },
+            &PUSHBOOL(i) => {
+                if i == 0 {
+                    stack.push(BoolObj::new(false));
+                } else {
+                    stack.push(BoolObj::new(true));
+                }
+            },
+            other => { panic!("{:?}'s interpretation is not implemented", other) }
+        }
     }
 }
 

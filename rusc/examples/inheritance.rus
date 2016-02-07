@@ -1,0 +1,22 @@
+# Demo of RuScript
+
+class Y {
+    virtual fn id(y: Int) -> Int
+}
+
+class X inherits Y {
+    fn id(y: Int) -> Int {
+        return y;
+    }
+}
+
+
+var a : Int = 1;
+
+var obj : X = new X();
+
+a = 2;
+
+a = obj.id(a);
+
+a.print();

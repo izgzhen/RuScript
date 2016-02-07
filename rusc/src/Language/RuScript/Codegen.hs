@@ -286,4 +286,4 @@ addFunc name = funcTable %= (\t -> M.insert name (M.size t) t)
 
 
 update' :: Int -> a -> V.Vector a -> V.Vector a
-update' i a v = V.update v $ V.singleton (i, a)
+update' i a v = v V.// [(i, a)]

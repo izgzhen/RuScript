@@ -3,7 +3,6 @@
 //!
 
 use super::*;
-use std::fmt::Debug;
 
 #[derive(Clone, Debug)]
 pub enum ByteCode {
@@ -64,7 +63,7 @@ pub enum ByteCode {
 // ---- Pseudo Instruction ---
 
     /// Class declaration: Number of attributes, number of methods,
-    /// father class index (negative for none)    
+    /// father class index (negative for none)
     CLASS(Integer, Integer, Integer),
 
     /// Mark the start of function declaration

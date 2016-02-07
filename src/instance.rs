@@ -2,7 +2,6 @@
 //! Instance object
 //!
 
-use super::*;
 use gc::*;
 use object::*;
 use class::Class;

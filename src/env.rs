@@ -24,7 +24,7 @@ pub fn load(f: &mut File) -> (Env, Vec<ByteCode>, usize) {
     let mut functions = vec![];
     let mut top_code  = vec![];
     let mut bytes: Vec<u8> = Vec::new();
-    let mut top_n: usize;
+    let top_n: usize;
 
     match Read::read_to_end(f, &mut bytes) {
         Ok(len) => {

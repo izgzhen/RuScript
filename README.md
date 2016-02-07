@@ -11,6 +11,7 @@ RuScript
 Please refer to `docs/spec-new`.
 
 ## TODOs
+* Debug as comment line arguments
 * Write more test programs
 * Visibility checking & inherited method/attribute checking
 * Improve the compiler and document the compiler code in haddock style
