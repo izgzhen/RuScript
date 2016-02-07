@@ -26,6 +26,8 @@ pub trait Object : Trace {
         access_fail(&self.tyof(), name);
     }
 
+    fn to_string(&self) -> String;
+
     fn tyof(&self) -> String;
 }
 

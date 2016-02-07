@@ -13,6 +13,10 @@ Please refer to `docs/spec-new`.
 
 ## TODOs
 * Improve the compiler and document the compiler code in haddock style
+* Array and `NIL` primitive
+* Write benchmarking examples, esp. the GC performance
+* Concurrent primitives
+* Module system
 
 ## Sugar
 * Linked dot, e.g. `a.b.c` or `a.b.c.f(1,2,3).e(4.5.6)` (But this can be get around with `var` bindings)

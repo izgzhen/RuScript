@@ -65,6 +65,10 @@ impl Object for InstanceObj {
         access_fail("InstanceObj", name);
     }
 
+    fn to_string(&self) -> String {
+        "<instance>".to_string()
+    }
+
     fn tyof(&self) -> String {
         "<instance>".to_string()
     }
