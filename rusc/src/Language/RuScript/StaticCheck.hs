@@ -154,6 +154,7 @@ instance Infer Expr where
         LStr  _ -> return TyStr
         LInt  _ -> return TyInt
         LBool _ -> return TyBool
+        LList   -> return $ TyList TyBot
 
 instance Infer Name where
     infer = lookUpLocalVar
@@ -243,6 +244,10 @@ isSubTypeOf t1 t2
                         | TyClass inherit == t1 -> return ()
                         | otherwise             -> isSubTypeOf t1 (TyClass inherit)
                     Nothing      -> err
+            TyList TyBot ->
+                case t1 of
+                    TyList _ -> return ()
+                    _        -> err
             _ -> err
   where
     err = throwError $ show t2 ++ " can't be subtype of " ++ show t1
@@ -316,11 +321,13 @@ getAttrs cls = do
 builtInMethods :: M.Map (Type, Name) FnSig
 builtInMethods = M.fromList [
       ((TyInt, "add"), FnSig "add" [("x", TyInt)] (Just TyInt))
-    , ((TyInt, "print"), FnSig "print" [] Nothing)
+    , ((TyInt, "print"), printSig)
     , ((TyBool, "not"), FnSig "not" [] Nothing)
-    , ((TyInt, "print"), FnSig "print" [] Nothing)
-    , ((TyStr, "print"), FnSig "print" [] Nothing)
+    , ((TyInt, "print"), printSig)
+    , ((TyStr, "print"), printSig)
     ]
+    where
+        printSig = FnSig "print" [] Nothing
 
 builtInAttrs :: M.Map (Type, Name) Type
 builtInAttrs = M.empty
@@ -329,7 +336,15 @@ queryBuiltinMethod :: Name -> Type -> Static FnSig
 queryBuiltinMethod name ty =
     case M.lookup (ty, name) builtInMethods of
         Just sig -> return sig
-        Nothing  -> throwError $ show ty ++ " doesn't have \"" ++ name ++ "\" method builtin"
+        Nothing  ->
+            case ty of
+                TyList eTy -> case name of
+                    "cons"  -> return $ FnSig "cons" [("x", eTy)] (Just (TyList eTy))
+                    "print" -> return $ FnSig "print" [] Nothing
+                    _      -> err
+                _ -> err
+    where
+        err = throwError $ show ty ++ " doesn't have \"" ++ name ++ "\" method builtin"
 
 
 queryBuiltinAttr :: Name -> Type -> Static Type

@@ -141,6 +141,9 @@ impl Interpreter {
                     stack.push(BoolObj::new(true));
                 }
             },
+            &PUSHLIST => {
+                stack.push(Gc::new(DynObj::List(ListObj::Empty)));
+            }
             other => { panic!("{:?}'s interpretation is not implemented", other) }
         }
     }

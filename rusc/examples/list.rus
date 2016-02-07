@@ -1,0 +1,7 @@
+var x : List<Int> = [];
+
+var y : Int = 1;
+
+var z : List<Int> = x.cons(y);
+
+z.print();

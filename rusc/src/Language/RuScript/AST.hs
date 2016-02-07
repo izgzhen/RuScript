@@ -4,7 +4,13 @@ type Name = String
 type Binding = (Name, Type)
 
 -- Type
-data Type = TyInt | TyBool | TyStr | TyClass Name deriving (Show, Eq, Ord)
+data Type = TyInt
+          | TyBool
+          | TyStr
+          | TyList Type
+          | TyClass Name
+          | TyBot -- undetermined type
+          deriving (Show, Eq, Ord)
 
 -- Basic Block
 data Block = Branch Expr [Statement] [Statement]
@@ -20,10 +26,11 @@ data Expr = EVar Name
           | ELit Literal
           deriving (Show, Eq)
 
--- Literal Value
+-- Literal Value Constructor
 data Literal = LStr String
              | LBool Bool
              | LInt Int
+             | LList
              deriving (Show, Eq)
 
 -- Linear statement

@@ -107,7 +107,7 @@ impl Object for IntObj {
                 } 
             },
             "print" => {
-                print!("{:?}", self.to_string());
+                print!("{}", self.to_string());
             },
             other => invoke_fail("IntObj", other)
         }
@@ -128,7 +128,7 @@ impl Object for BoolObj {
                 stack.push(BoolObj::new(!self.val));
             },
             "print" => {
-                print!("{:?}", self.to_string());
+                print!("{}", self.to_string());
             },
             other => invoke_fail("BoolObj", other)
         }
@@ -146,7 +146,7 @@ impl Object for StrObj {
     fn invoke(&self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "print" => {
-                print!("{:?}", self.to_string());
+                print!("{}", self.to_string());
             },
             other => invoke_fail("StrObj", other)
         }
@@ -165,12 +165,11 @@ impl Object for ListObj {
     fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
             "print" => {
-                print!("{:?}", self.to_string());
+                print!("{}", self.to_string());
             },
             "cons" => {
                 let b = stack.pop().unwrap();
-                let this = stack.pop().unwrap();
-                stack.push(ListObj::new(b, this));
+                stack.push(ListObj::new(b, Gc::new(DynObj::List(self.clone()))));
             },
             "len" => {
                 stack.push(IntObj::new(self.len()));
@@ -196,9 +195,23 @@ impl Object for ListObj {
             &Cons{ ref hd, ref tl } => {
                 let mut s = String::from("[");
                 s.push_str(&hd.to_string());
-                s.push_str(", ");
-                s.push_str(&tl.to_string());
-                s
+
+                match **tl {
+                    DynObj::List(ref l) => {
+                        match *l {
+                            Empty => {
+                                s.push(']');
+                                s
+                            },
+                            _ => {
+                                s.push_str(", ");
+                                s.push_str(&tl.to_string());
+                                s
+                            }
+                        }
+                    },
+                    _ => panic!("illegal type in list"),
+                }
             }
         }
     }

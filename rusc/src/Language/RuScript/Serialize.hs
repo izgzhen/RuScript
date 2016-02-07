@@ -46,6 +46,7 @@ serialize (PUSHBOOL i)      = segify 13 [i]
 serialize (CLASS i1 i2 i3)  = segify 14 [i1, i2, i3]
 serialize SFUNC             = segify 15 []
 serialize (EBODY i)         = segify 16 [i]
+serialize PUSHLIST          = segify 17 []
 serialize other             = error $ "can't serialize" ++ show other
 
 -- serialize x = error $ "unimplelemented serialization of: " ++ show x

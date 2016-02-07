@@ -26,6 +26,8 @@ data ByteCode = CALL Int
               | CLASS Int Int Int
               | SFUNC
               | EBODY Int
+              -- * Extensions
+              | PUSHLIST
               deriving (Show, Eq)
 
 

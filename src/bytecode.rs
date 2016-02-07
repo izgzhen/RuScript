@@ -72,5 +72,7 @@ pub enum ByteCode {
     /// Mark the end of function/method definition: Number of local vars
     EBODY(Integer),
 
+    /// Push an empty array on stack
+    PUSHLIST,
 }
 
