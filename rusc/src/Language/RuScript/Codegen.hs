@@ -97,6 +97,7 @@ instance ToByteCode Expr where
             LInt i  -> emit $ PUSHINT i
             LBool b -> if b then emit (PUSHBOOL 1) else emit (PUSHBOOL 0)
             LList   -> emit PUSHLIST
+            LNil    -> emit PUSHNIL
 
 instance ToByteCode Statement where
     flatten (SVar (x, _) Nothing) = addVar x

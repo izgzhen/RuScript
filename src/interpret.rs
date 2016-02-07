@@ -143,6 +143,9 @@ impl Interpreter {
             },
             &PUSHLIST => {
                 stack.push(Gc::new(DynObj::List(ListObj::Empty)));
+            },
+            &PUSHNIL => {
+                stack.push(Gc::new(DynObj::Non));
             }
             other => { panic!("{:?}'s interpretation is not implemented", other) }
         }

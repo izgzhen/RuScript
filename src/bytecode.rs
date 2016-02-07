@@ -74,5 +74,8 @@ pub enum ByteCode {
 
     /// Push an empty array on stack
     PUSHLIST,
+
+    /// Push Nil on stack
+    PUSHNIL
 }
 

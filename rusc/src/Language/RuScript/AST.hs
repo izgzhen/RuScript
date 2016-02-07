@@ -4,7 +4,8 @@ type Name = String
 type Binding = (Name, Type)
 
 -- Type
-data Type = TyInt
+data Type = TyNil
+          | TyInt
           | TyBool
           | TyStr
           | TyList Type
@@ -31,6 +32,7 @@ data Literal = LStr String
              | LBool Bool
              | LInt Int
              | LList
+             | LNil
              deriving (Show, Eq)
 
 -- Linear statement

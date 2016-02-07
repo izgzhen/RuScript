@@ -28,6 +28,7 @@ data ByteCode = CALL Int
               | EBODY Int
               -- * Extensions
               | PUSHLIST
+              | PUSHNIL
               deriving (Show, Eq)
 
 

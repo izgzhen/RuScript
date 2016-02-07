@@ -155,6 +155,7 @@ instance Infer Expr where
         LInt  _ -> return TyInt
         LBool _ -> return TyBool
         LList   -> return $ TyList TyBot
+        LNil    -> return TyNil
 
 instance Infer Name where
     infer = lookUpLocalVar
@@ -325,6 +326,7 @@ builtInMethods = M.fromList [
     , ((TyBool, "not"), FnSig "not" [] Nothing)
     , ((TyInt, "print"), printSig)
     , ((TyStr, "print"), printSig)
+    , ((TyNil, "print"), printSig)
     ]
     where
         printSig = FnSig "print" [] Nothing

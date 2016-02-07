@@ -18,9 +18,11 @@ rvmExecutable = "../target/debug/main"
 
 testList :: [(String, String, Result)] -- Name, stdin, expected stdout
 testList = [ ("inheritance", "", NormalStdOut "1")
-           , ("add", "", NormalStdOut "3")
-           , ("control", "", NormalStdOut "2")
-           , ("vis", "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")]
+           , ("add",         "", NormalStdOut "3")
+           , ("control",     "", NormalStdOut "2")
+           , ("vis",         "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")
+           , ("nil",         "", NormalStdOut "nil")
+           , ("list",        "", NormalStdOut "[1]") ]
 
 main = do
     putStrLn $ "Build artifacts..."

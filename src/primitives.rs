@@ -106,9 +106,6 @@ impl Object for IntObj {
                     }
                 } 
             },
-            "print" => {
-                print!("{}", self.to_string());
-            },
             other => invoke_fail("IntObj", other)
         }
     }
@@ -127,9 +124,6 @@ impl Object for BoolObj {
             "not" => {
                 stack.push(BoolObj::new(!self.val));
             },
-            "print" => {
-                print!("{}", self.to_string());
-            },
             other => invoke_fail("BoolObj", other)
         }
     }
@@ -145,9 +139,6 @@ impl Object for StrObj {
     /// Built-in functions: `print`
     fn invoke(&self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
-            "print" => {
-                print!("{}", self.to_string());
-            },
             other => invoke_fail("StrObj", other)
         }
     }
@@ -164,9 +155,6 @@ impl Object for ListObj {
     /// Built-in functions: `print`
     fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
         match name {
-            "print" => {
-                print!("{}", self.to_string());
-            },
             "cons" => {
                 let b = stack.pop().unwrap();
                 stack.push(ListObj::new(b, Gc::new(DynObj::List(self.clone()))));

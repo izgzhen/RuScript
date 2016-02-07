@@ -111,6 +111,7 @@ pType :: MyParser Type
 pType = reserved "Int" *> return TyInt
     <|> reserved "Bool" *> return TyBool
     <|> reserved "Str" *> return TyStr
+    <|> reserved "Nil" *> return TyNil
     <|> TyList <$> (string "List<" *> pType <* char '>')
     <|> TyClass <$> pIdent
 
@@ -136,6 +137,7 @@ pLit = try (LBool <$> pBool)
    <|> LStr <$> parseString
    <|> LInt . fromInteger <$> pInt
    <|> string "[]" *> return LList
+   <|> reserved "nil" *> return LNil
 
 pBool :: MyParser Bool
 pBool = reserved "True"  *> return True
