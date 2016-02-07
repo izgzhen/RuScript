@@ -12,10 +12,10 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies.gc]
-path = "../rust-gc/gc"
+path = "../../rust-gc/gc"
 version = "0.0.5"
 
 [dependencies.gc_plugin]
-path = "../rust-gc/gc_plugin"
+path = "../../rust-gc/gc_plugin"
 version = "0.0.5"
 

@@ -21,6 +21,7 @@ executable rusc
                        Language.RuScript.ByteCode
                        Language.RuScript.StaticCheck
                        Language.RuScript.Option
+                       Language.RuScript.Desugar
   other-extensions:    FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
                        mtl >=2.2 && <2.3,
