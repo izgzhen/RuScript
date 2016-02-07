@@ -12,7 +12,6 @@ RuScript
 Please refer to `docs/spec-new`.
 
 ## TODOs
-* Inherited method/attribute checking
 * Improve the compiler and document the compiler code in haddock style
 
 ## Sugar

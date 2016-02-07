@@ -10,13 +10,12 @@ class X inherits Y {
     }
 }
 
-
-var a : Int = 1;
+fn callId(obj: Y) {
+    var a : Int = 1;
+    a = obj.id(a);
+    a.print();
+}
 
 var obj : X = new X();
 
-a = 2;
-
-a = obj.id(a);
-
-a.print();
+callId(obj);

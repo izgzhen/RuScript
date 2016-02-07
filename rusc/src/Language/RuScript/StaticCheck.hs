@@ -78,13 +78,13 @@ instance Check Statement where
         case mExpr of
             Just expr -> do
                 ty <- infer expr
-                assert (snd binding == ty) "Variable binding's type don't match"
+                snd binding `isSubTypeOf` ty
             Nothing -> return ()
 
     check (SAssign lhs expr) = do
         ty1 <- infer lhs
         ty2 <- infer expr
-        assertEq ty1 ty2
+        ty1 `isSubTypeOf` ty2
 
     check (SBlock block) = check block
 
@@ -101,7 +101,7 @@ instance Check Statement where
     check (SReturn expr) = do
         ty <- getEncloseFuncRetTy
         ty' <- infer expr
-        assertEq ty ty'
+        ty `isSubTypeOf` ty'
 
     check SBreak = return ()
 
@@ -109,7 +109,7 @@ checkFunc :: FnSig -> [Expr] -> Static ()
 checkFunc (FnSig _ bindings _) params = do
     tys <- mapM infer params
     assert (length tys == length bindings) "length of params is not equal to type signature"
-    mapM_ (uncurry assertEq) $ zip (map snd bindings) tys
+    mapM_ (uncurry isSubTypeOf) $ zip (map snd bindings) tys
 
 instance Check Block where
     check (Branch expr ss1 ss2) = do
@@ -147,7 +147,7 @@ instance Infer Expr where
     infer (ENew cls params) = do
         attrs <- getAttrs cls
         tys <- mapM infer params
-        mapM_ (uncurry assertEq) $ zip (map (snd . snd) attrs) tys
+        mapM_ (uncurry isSubTypeOf) $ zip (map (snd . snd) attrs) tys
         return $ TyClass cls
 
     infer (ELit lit) = case lit of
@@ -230,6 +230,24 @@ addMethod name vis = \case
         addMethod' sig@(FnSig x _ _) =
             classTable %= M.update (Just . over mtdTable (M.insert x (vis, sig))) name
 
+-- isSubTypeOf
+isSubTypeOf :: Type -> Type -> Static ()
+isSubTypeOf t1 t2
+    | t1 == t2  = return ()
+    | otherwise =
+        case t2 of
+            TyClass cls -> do
+                t <- lookupClass cls
+                case (_mInherit t) of
+                    Just inherit
+                        | TyClass inherit == t1 -> return ()
+                        | otherwise             -> isSubTypeOf t1 (TyClass inherit)
+                    Nothing      -> err
+            _ -> err
+  where
+    err = throwError $ show t2 ++ " can't be subtype of " ++ show t1
+
+
 assertEq :: (MonadError String m, Eq a, Show a) => a -> a -> m ()
 assertEq a b = assert (a == b) $ show a ++ " and " ++ show b ++ " are not equal"
 
@@ -243,13 +261,18 @@ addBinding (x, ty) = localTable %= M.insert x ty
 getSigFromType :: Name -> Type -> Static FnSig
 getSigFromType method = \case
     TyClass cls -> do
-        t <- use classTable
-        case M.lookup cls t of
-            Just table -> case M.lookup method $ _mtdTable table of
-                Just (_, sig) -> return sig
-                Nothing       -> throwError $ "has no idea of method " ++ method
-            Nothing -> throwError $ "has no idea of class " ++ cls
+        table <- lookupClass cls
+        case M.lookup method $ _mtdTable table of
+            Just (_, sig) -> return sig
+            Nothing       -> throwError $ "has no idea of method " ++ method
     other       -> queryBuiltinMethod method other
+
+lookupClass :: Name -> Static ClassType
+lookupClass cls = do
+    t <- use classTable
+    case M.lookup cls t of
+        Just table -> return table
+        Nothing    -> throwError $ "I has no idea of class " ++ cls
 
 
 getSigOfFunc :: Name -> Static FnSig

@@ -17,7 +17,7 @@ rvmExecutable :: String
 rvmExecutable = "../target/debug/main"
 
 testList :: [(String, String, Result)] -- Name, stdin, expected stdout
-testList = [ ("inheritance", "", NormalStdOut "2")
+testList = [ ("inheritance", "", NormalStdOut "1")
            , ("add", "", NormalStdOut "3")
            , ("control", "", NormalStdOut "2")
            , ("vis", "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")]
@@ -57,5 +57,5 @@ main = do
                                         ", because \"" ++ err ++
                                         "\" is not the expected failure \"" ++ s ++ "\""
                 _ -> putStrLn $ "+ Test failed: " ++ name ++
-                                ", because it is expected to success, but fail with code " ++
-                                show i ++ ": " ++ err
+                                ", because it is expected to success, but fail with code \"" ++
+                                show i ++ ": " ++ err ++ "\""
