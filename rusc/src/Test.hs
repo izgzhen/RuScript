@@ -1,3 +1,5 @@
+-- test script, which should be run by `runghc` under the `rusc` directory
+
 module Test where
 
 import System.FilePath ((</>))
@@ -22,10 +24,11 @@ testList = [ ("inheritance", "", NormalStdOut "1")
            , ("control",     "", NormalStdOut "2")
            , ("vis",         "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")
            , ("nil",         "", NormalStdOut "nil")
-           , ("list",        "", NormalStdOut "[1]") ]
+           , ("list",        "", NormalStdOut "[1]")
+           , ("invoke",      "", NormalStdOut "6") ]
 
 main = do
-    putStrLn $ "Build artifacts..."
+    putStrLn $ "Building artifacts..."
     -- Compile VM
     callProcess "cargo" ["build", "-q"]
     -- Compile Compiler

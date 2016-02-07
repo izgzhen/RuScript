@@ -104,8 +104,19 @@ impl Object for IntObj {
                     ref other => {
                         panic!("invalid type for add: {:?}", other.tyof());
                     }
-                } 
+                }
             },
+            "le" => {
+                let b = stack.pop().unwrap();
+                match *b {
+                    DynObj::Int(ref intobj) => {
+                        stack.push(BoolObj::new(self.val <= intobj.val));
+                    },
+                    ref other => {
+                        panic!("invalid type for le: {:?}", other.tyof());
+                    }
+                }
+            }
             other => invoke_fail("IntObj", other)
         }
     }

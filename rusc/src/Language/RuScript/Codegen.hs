@@ -123,11 +123,11 @@ instance ToByteCode Statement where
     flatten (SInvoke x f exprs) = invoke x f exprs
     flatten (SCall f exprs) = call f exprs
 
-invoke :: Name -> Name -> [Expr] -> Codegen ()
-invoke x f exprs = do
+invoke :: Expr -> Name -> [Expr] -> Codegen ()
+invoke expr f exprs = do
     let exprs' = reverse exprs
     flatten exprs'
-    pushVar x
+    flatten expr
     emit $ INVOKE f
 
 call :: Name -> [Expr] -> Codegen ()

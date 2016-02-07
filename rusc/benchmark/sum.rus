@@ -1,0 +1,11 @@
+# Sum over 1 .. n
+
+var i : Int = 1;
+var sum : Int = 0;
+
+while ((i <= 100)) {
+    sum = (sum + i);
+    i = (i + 1);
+}
+
+sum.print();

@@ -12,7 +12,6 @@ RuScript
 Please refer to `docs/spec-new`.
 
 ## TODOs
-* `NIL` primitive
 * Write benchmarking examples, esp. the GC performance
 * Concurrent primitives
 * Module system

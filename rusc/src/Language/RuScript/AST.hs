@@ -21,10 +21,16 @@ data Block = Branch Expr [Statement] [Statement]
 -- Expression
 data Expr = EVar Name
           | EGet Name Name
-          | EInvoke Name Name [Expr]
+          | EInvoke Expr Name [Expr]
           | ECall Name [Expr]
           | ENew Name [Expr]
           | ELit Literal
+          | ETerm Term
+          deriving (Show, Eq)
+
+-- Term. It should be desugared into invoke
+data Term = TPlus Expr Expr
+          | TLE Expr Expr
           deriving (Show, Eq)
 
 -- Literal Value Constructor
@@ -39,7 +45,7 @@ data Literal = LStr String
 data Statement = SVar Binding (Maybe Expr)
                | SAssign LHS Expr
                | SBlock Block
-               | SInvoke Name Name [Expr]
+               | SInvoke Expr Name [Expr]
                | SCall Name [Expr]
                | SReturn Expr
                | SBreak

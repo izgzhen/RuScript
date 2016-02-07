@@ -3,9 +3,13 @@
 module Language.RuScript.Parser where
 
 import Language.RuScript.AST
+import Language.RuScript.Desugar
 
 import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as Tok
+
+testParse :: MyParser a -> String -> Either ParseError a
+testParse p = parse p ""
 
 parseProgram :: String -> Either ParseError Program
 parseProgram = parse pProgram ""
@@ -28,7 +32,8 @@ pStatement = SVar <$> (reserved "var" *> pBinding) <*> pMaybeEqualExpr <* char '
          <|> SReturn <$> (reserved "return" *> pExpr <* char ';' <* whiteSpace)
          <|> reserved "break" *> char ';' *> return SBreak <* whiteSpace
          <|> SBlock <$> (pBranch <|> pLoop)
-         <|> try (SInvoke <$> (pIdent <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
+         <|> try (SInvoke <$> (EVar <$> pIdent <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
+         <|> try (SInvoke <$> (parens pExpr <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
          <|> SCall <$> pIdent <*> pParams <* char ';' <* whiteSpace
 
 pLHS :: MyParser LHS
@@ -117,11 +122,19 @@ pType = reserved "Int" *> return TyInt
 
 pExpr :: MyParser Expr
 pExpr = pNew
-    <|> try (EInvoke <$> (pIdent <* char '.') <*> pIdent <*> pParams)
+    <|> try (EInvoke <$> (EVar <$> pIdent <* char '.') <*> pIdent <*> pParams)
+    <|> try (EInvoke <$> (parens pExpr <* char '.') <*> pIdent <*> pParams)
     <|> try pGet
     <|> ELit <$> pLit
     <|> try (ECall <$> pIdent <*> pParams)
     <|> EVar <$> pIdent
+    <|> desugarTerm <$> parens pTerm
+
+pBinary :: (Expr -> Expr -> Term) -> MyParser String -> MyParser Term
+pBinary cons pOp = cons <$> pExpr <* (whiteSpace *> pOp <* whiteSpace) <*> pExpr
+
+pTerm = try (pBinary TPlus (string "+"))
+    <|> try (pBinary TLE   (string "<="))
 
 pNew :: MyParser Expr
 pNew  = ENew <$> (reserved "new" *> pIdent) <*> pParams

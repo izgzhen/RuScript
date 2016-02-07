@@ -324,6 +324,7 @@ builtInMethods = M.fromList [
       ((TyInt, "add"), FnSig "add" [("x", TyInt)] (Just TyInt))
     , ((TyInt, "print"), printSig)
     , ((TyBool, "not"), FnSig "not" [] Nothing)
+    , ((TyInt, "le"), FnSig "le" [("x", TyInt)] (Just TyBool))
     , ((TyInt, "print"), printSig)
     , ((TyStr, "print"), printSig)
     , ((TyNil, "print"), printSig)
