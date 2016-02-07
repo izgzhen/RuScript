@@ -130,7 +130,7 @@ invoke expr f exprs = do
     flatten expr
     emit $ INVOKE f
 
-call :: Name -> [Expr] -> Codegen ()
+call :: Qualified Name -> [Expr] -> Codegen ()
 call f exprs = do
     let exprs' = reverse exprs
     flatten exprs'
@@ -255,7 +255,7 @@ pushVar = withVar PUSH
 emit :: ByteCode -> Codegen ()
 emit code = bytecode %= flip V.snoc code
 
-new :: Name -> Codegen ()
+new :: Qualified Name -> Codegen ()
 new x = lookupClass x >>= emit . NEW
 
 withLoop :: (Pos -> Label -> Codegen a) -> Codegen a
@@ -277,7 +277,7 @@ lookupClass name = do
         Just idx -> return idx
 
 addClass :: Name -> Codegen ()
-addClass name = classTable %= (\t -> M.insert name (M.size t) t)
+addClass name = classTable %= (\t -> M.insert (Qualified [] name) (M.size t) t)
 
 lookupFunc :: Name -> Codegen Int
 lookupFunc name = do

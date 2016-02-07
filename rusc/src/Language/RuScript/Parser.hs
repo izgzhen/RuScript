@@ -24,7 +24,17 @@ pProgram = Program <$> many (whiteSpace *> pTopLevel <* whiteSpace)
 
 pTopLevel :: MyParser (Either Statement Declaration)
 pTopLevel = Left <$> pStatement
-        <|> Right <$> (pFuncDecl <|> pClassDecl)
+        <|> Right <$> (pFuncDecl <|> pClassDecl <|> pImportDecl)
+
+pImportDecl :: MyParser Declaration
+pImportDecl = ImportDecl <$> (reserved "import" *> whiteSpace *> (pIdent `sepEndBy` char '.'))
+
+pQualified :: MyParser (Qualified Name)
+pQualified = f <$> pIdent `sepEndBy` char '.'
+  where
+    f []  = error "parsed nothing out as qualified name"
+    f xs  = let xs' = reverse xs
+            in  Qualified (reverse $ tail xs') (head xs')
 
 pStatement :: MyParser Statement
 pStatement = SVar <$> (reserved "var" *> pBinding) <*> pMaybeEqualExpr <* char ';' <* whiteSpace
@@ -34,7 +44,7 @@ pStatement = SVar <$> (reserved "var" *> pBinding) <*> pMaybeEqualExpr <* char '
          <|> SBlock <$> (pBranch <|> pLoop)
          <|> try (SInvoke <$> (EVar <$> pIdent <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
          <|> try (SInvoke <$> (parens pExpr <* char '.') <*> pIdent <*> pParams <* char ';' <* whiteSpace)
-         <|> SCall <$> pIdent <*> pParams <* char ';' <* whiteSpace
+         <|> SCall <$> pQualified <*> pParams <* char ';' <* whiteSpace
 
 pLHS :: MyParser LHS
 pLHS = try (LAttr <$> (pIdent <* char '.') <*> pIdent)
@@ -82,8 +92,8 @@ pVisibility :: MyParser Visibility
 pVisibility = try (return Private <* reserved "private")
           <|> return Public
 
-pInherit :: MyParser (Maybe String)
-pInherit = Just <$> (reserved "inherits" *> pIdent)
+pInherit :: MyParser (Maybe (Qualified String))
+pInherit = Just <$> (reserved "inherits" *> pQualified)
        <|> return Nothing
 
 pMethod :: MyParser Method
@@ -103,7 +113,7 @@ pFnSig = do
     whiteSpace
     mty <- pMaybeRetType
     whiteSpace
-    return $ FnSig name args mty
+    return $ FnSig (Qualified [] name) args mty
 
 pMaybeRetType :: MyParser (Maybe Type)
 pMaybeRetType = try (Just <$> (string "->" *> whiteSpace *> pType))
@@ -118,7 +128,7 @@ pType = reserved "Int" *> return TyInt
     <|> reserved "Str" *> return TyStr
     <|> reserved "Nil" *> return TyNil
     <|> TyList <$> (string "List<" *> pType <* char '>')
-    <|> TyClass <$> pIdent
+    <|> TyClass <$> pQualified
 
 pExpr :: MyParser Expr
 pExpr = pNew
@@ -126,7 +136,7 @@ pExpr = pNew
     <|> try (EInvoke <$> (parens pExpr <* char '.') <*> pIdent <*> pParams)
     <|> try pGet
     <|> ELit <$> pLit
-    <|> try (ECall <$> pIdent <*> pParams)
+    <|> try (ECall <$> pQualified <*> pParams)
     <|> EVar <$> pIdent
     <|> desugarTerm <$> parens pTerm
 
@@ -137,7 +147,7 @@ pTerm = try (pBinary TPlus (string "+"))
     <|> try (pBinary TLE   (string "<="))
 
 pNew :: MyParser Expr
-pNew  = ENew <$> (reserved "new" *> pIdent) <*> pParams
+pNew  = ENew <$> (reserved "new" *> pQualified) <*> pParams
 
 pParams :: MyParser [Expr]
 pParams = parens (pExpr `sepEndBy` (char ',' <* whiteSpace))

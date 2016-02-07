@@ -25,13 +25,13 @@ import qualified Data.List as L
 
 data StaticState = StaticState {
   _localTable  :: M.Map Name Type
-, _funcTable   :: M.Map Name FnSig
-, _classTable  :: M.Map Name ClassType
+, _funcTable   :: M.Map (Qualified Name) FnSig
+, _classTable  :: M.Map (Qualified Name) ClassType
 , _enclosedRet :: Maybe Type
 }
 
 data ClassType = ClassType {
-  _mInherit  :: Maybe Name
+  _mInherit  :: Maybe (Qualified Name)
 , _attrTable :: M.Map Name (Visibility, Type)
 , _mtdTable  :: M.Map Name (Visibility, FnSig)
 }
@@ -68,9 +68,10 @@ instance Check Declaration where
         inFunc sig $ check stmts
 
     check (ClassDecl name mFather attrs methods) = do
-        addEmptyClass name mFather
-        mapM_ (\(vis, binding) -> addAttr   name vis binding) attrs
-        mapM_ (\(vis, method)  -> addMethod name vis method) methods
+        let qualified = (Qualified [] name)
+        addEmptyClass qualified mFather
+        mapM_ (\(vis, binding) -> addAttr   qualified vis binding) attrs
+        mapM_ (\(vis, method)  -> addMethod qualified vis method) methods
 
 instance Check Statement where
     check (SVar binding mExpr) = do
@@ -182,7 +183,7 @@ addFnSig :: FnSig -> Static ()
 addFnSig sig@(FnSig name _ _) = funcTable %= M.insert name sig
 
 
-inMethod :: Name -> FnSig -> Static a -> Static a
+inMethod :: Qualified Name -> FnSig -> Static a -> Static a
 inMethod cls (FnSig _ bindings mRet) m = do
     case mRet of
         Just ty -> enclosedRet .= Just ty
@@ -213,15 +214,15 @@ inFunc (FnSig _ bindings mRet) m = do
     return ret
 
 
-addEmptyClass :: Name -> (Maybe Name) -> Static ()
+addEmptyClass :: Qualified Name -> (Maybe (Qualified Name)) -> Static ()
 addEmptyClass name mFather =
     classTable %= M.insert name (ClassType mFather M.empty M.empty)
 
-addAttr :: Name -> Visibility -> Binding -> Static ()
+addAttr :: Qualified Name -> Visibility -> Binding -> Static ()
 addAttr name vis (x, ty) =
     classTable %= M.update (Just . over attrTable (M.insert x (vis, ty))) name
 
-addMethod :: Name -> Visibility -> Method -> Static ()
+addMethod :: Qualified Name -> Visibility -> Method -> Static ()
 addMethod name vis = \case
     Virtual sig        -> addMethod' sig
     Concrete sig stmts -> do
@@ -229,7 +230,7 @@ addMethod name vis = \case
         inMethod name sig $ check stmts
     where
         addMethod' :: FnSig -> Static ()
-        addMethod' sig@(FnSig x _ _) =
+        addMethod' sig@(FnSig (Qualified _ x) _ _) =
             classTable %= M.update (Just . over mtdTable (M.insert x (vis, sig))) name
 
 -- isSubTypeOf
@@ -273,20 +274,20 @@ getSigFromType method = \case
             Nothing       -> throwError $ "has no idea of method " ++ method
     other       -> queryBuiltinMethod method other
 
-lookupClass :: Name -> Static ClassType
+lookupClass :: Qualified Name -> Static ClassType
 lookupClass cls = do
     t <- use classTable
     case M.lookup cls t of
         Just table -> return table
-        Nothing    -> throwError $ "I has no idea of class " ++ cls
+        Nothing    -> throwError $ "I has no idea of class " ++ show cls
 
 
-getSigOfFunc :: Name -> Static FnSig
+getSigOfFunc :: Qualified Name -> Static FnSig
 getSigOfFunc f = do
     t <- use funcTable
     case M.lookup f t of
         Just sig -> return sig
-        Nothing  -> throwError $ "can't find signature of " ++ f
+        Nothing  -> throwError $ "can't find signature of " ++ show f
 
 getEncloseFuncRetTy :: Static Type
 getEncloseFuncRetTy = do
@@ -309,28 +310,28 @@ lookUpAttr ty name = do
             bindings <- getAttrs cls
             case L.lookup name bindings of
                 Just attr -> return attr
-                Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ cls
+                Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ show cls
         other -> (,) Public <$> queryBuiltinAttr name other
 
-getAttrs :: Name -> Static [(Name, (Visibility, Type))]
+getAttrs :: Qualified Name -> Static [(Name, (Visibility, Type))]
 getAttrs cls = do
     t <- use classTable
     case M.lookup cls t of
         Just (ClassType _ attrs _) -> return $ M.toList attrs
-        _ -> throwError $ "can't get attributes of class " ++ cls
+        _ -> throwError $ "can't get attributes of class " ++ show cls
 
 builtInMethods :: M.Map (Type, Name) FnSig
 builtInMethods = M.fromList [
-      ((TyInt, "add"), FnSig "add" [("x", TyInt)] (Just TyInt))
+      ((TyInt, "add"), FnSig (Qualified [] "add") [("x", TyInt)] (Just TyInt))
     , ((TyInt, "print"), printSig)
-    , ((TyBool, "not"), FnSig "not" [] Nothing)
-    , ((TyInt, "le"), FnSig "le" [("x", TyInt)] (Just TyBool))
+    , ((TyBool, "not"), FnSig (Qualified [] "not") [] Nothing)
+    , ((TyInt, "le"), FnSig (Qualified [] "le") [("x", TyInt)] (Just TyBool))
     , ((TyInt, "print"), printSig)
     , ((TyStr, "print"), printSig)
     , ((TyNil, "print"), printSig)
     ]
     where
-        printSig = FnSig "print" [] Nothing
+        printSig = FnSig (Qualified [] "print") [] Nothing
 
 builtInAttrs :: M.Map (Type, Name) Type
 builtInAttrs = M.empty
@@ -342,8 +343,8 @@ queryBuiltinMethod name ty =
         Nothing  ->
             case ty of
                 TyList eTy -> case name of
-                    "cons"  -> return $ FnSig "cons" [("x", eTy)] (Just (TyList eTy))
-                    "print" -> return $ FnSig "print" [] Nothing
+                    "cons"  -> return $ FnSig (Qualified [] "cons") [("x", eTy)] (Just (TyList eTy))
+                    "print" -> return $ FnSig (Qualified [] "print") [] Nothing
                     _      -> err
                 _ -> err
     where

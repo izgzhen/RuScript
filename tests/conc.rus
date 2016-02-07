@@ -1,0 +1,20 @@
+# Concurrency (Not implemented yet)
+
+import conc
+
+fn printOne() {
+    var a : Int = 1;
+    while (True) {
+        a.print();
+    }
+}
+
+fn printTwo() {
+    var a : Int = 2;
+    while (True) {
+        a.print();
+    }
+}
+
+printOne();
+fork(printTwo).join(); # from conc
