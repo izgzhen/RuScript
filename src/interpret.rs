@@ -35,6 +35,10 @@ impl Interpreter {
 
         let mut pc: usize = 0;
         while pc < code.len() {
+            if self.cmd_opt.debug {
+                println!("[DEBUG] Executing: {:?}", code[pc]);
+            }
+
             // Dealing with frame control instructions
             match code[pc] {
                 // Call global function

@@ -17,7 +17,7 @@ main = do
     args <- getArgs
     if (length args > 1) then do
         txt <- readFile (head args)
-        let opt = parseOpt $ tail args
+        let opt = parseOpt $ drop 2 args
         let target = args !! 1
         case parseProgram txt of
             Left err -> putStrLn $ "Error in parsing: " ++ show err

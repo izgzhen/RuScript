@@ -239,7 +239,10 @@ withVar constr name = do
         Nothing  -> error $ "use name before declaration: " ++ show name
 
 addVar :: Name -> Codegen ()
-addVar name = symbolTable %= (\t -> M.insert name (M.size t) t)
+addVar name = symbolTable %= \t ->
+    case M.lookup name t of
+        Just _  -> t
+        Nothing -> M.insert name (M.size t) t
 
 popVar :: Name -> Codegen ()
 popVar = withVar POP

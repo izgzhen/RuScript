@@ -13,7 +13,9 @@ rvmExecutable :: String
 rvmExecutable = "../target/debug/main"
 
 testList :: [(String, String, String)] -- Name, stdin, expected stdout
-testList = [("inheritance", "", "2")]
+testList = [ ("inheritance", "", "2")
+           , ("add", "", "3")
+           , ("control", "", "2") ]
 
 main = do
     putStrLn $ "Build artifacts..."

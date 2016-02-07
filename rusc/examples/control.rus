@@ -1,0 +1,9 @@
+var b : Bool = False;
+
+if (b) {
+    var c : Int = 1;
+    c.print();
+} else {
+    var c : Int = 2;
+    c.print();
+}
