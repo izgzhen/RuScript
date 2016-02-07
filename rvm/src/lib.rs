@@ -1,5 +1,5 @@
 //! 
-//! The RuScript Runtime
+//! The RuScript Virtual Machine (RVM)
 //! 
 //! ## Loading stage
 //! loader read in bytes, deserialize them
@@ -26,7 +26,7 @@
 //!   + Execution: `interpret`
 //!
 
-#![crate_name = "ruscript"]
+#![crate_name = "rvm"]
 
 #![feature(plugin, custom_derive, custom_attribute, box_syntax, test)]
 #![feature(convert)]

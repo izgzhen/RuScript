@@ -9,13 +9,9 @@ RuScript
 * Static checking module
 
 ## Design
-Please refer to `docs/spec-new`.
+Please refer to `spec`
 
 ## TODOs
 * Write benchmarking examples, esp. the GC performance
 * Concurrent primitives
 * Module system
-
-## Sugar
-* Linked dot, e.g. `a.b.c` or `a.b.c.f(1,2,3).e(4.5.6)` (But this can be get around with `var` bindings)
-

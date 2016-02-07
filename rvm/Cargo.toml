@@ -1,10 +1,10 @@
 [package]
-name = "ruscript"
-version = "0.3.0"
+name = "rvm"
+version = "0.3.1"
 authors = ["Zhen Zhang <izgzhen@gmail.com>"]
 
 [lib]
-name = "ruscript"
+name = "rvm"
 path = "src/lib.rs"
 
 [[bin]]

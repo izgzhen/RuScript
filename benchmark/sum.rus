@@ -1,4 +1,11 @@
 # Sum over 1 .. n
+# n = 5000, 3.155 s
+# n = 10000, 6.129 s
+# n = 20000, 11.959 s
+
+# Comparison with Python:
+# n = 500000, 3.552 s
+# n = 5000000, 35.061 s
 
 var i : Int = 1;
 var sum : Int = 0;

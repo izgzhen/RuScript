@@ -29,7 +29,7 @@ pub enum DynObj {
 impl Object for DynObj {
     fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
         if name == "print" {
-            print!("{}", &self.to_string());
+            // print!("{}", &self.to_string());
             return
         }
 
