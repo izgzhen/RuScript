@@ -1,7 +1,11 @@
 module Test where
 
 import System.FilePath ((</>))
-import System.Process (readProcess, callProcess)
+import System.Process
+import System.Exit
+
+data Result = NormalStdOut String
+            | CompilerErrorOut String
 
 ruscExecutable :: String
 ruscExecutable = "./.stack-work/dist/x86_64-osx/Cabal-1.22.4.0/build/rusc/rusc"
@@ -12,10 +16,11 @@ demoDir = "examples"
 rvmExecutable :: String
 rvmExecutable = "../target/debug/main"
 
-testList :: [(String, String, String)] -- Name, stdin, expected stdout
-testList = [ ("inheritance", "", "2")
-           , ("add", "", "3")
-           , ("control", "", "2") ]
+testList :: [(String, String, Result)] -- Name, stdin, expected stdout
+testList = [ ("inheritance", "", NormalStdOut "2")
+           , ("add", "", NormalStdOut "3")
+           , ("control", "", NormalStdOut "2")
+           , ("vis", "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")]
 
 main = do
     putStrLn $ "Build artifacts..."
@@ -29,11 +34,28 @@ main = do
         let source = demoDir </> name ++ ".rus"
         let binary = demoDir </> name ++ ".rusb"
         -- Compile
-        callProcess ruscExecutable [source, binary]
-        -- Run
-        stdout <- readProcess rvmExecutable [binary] stdin
-        if stdout == expected
-            then putStrLn $ "+ Test passed: " ++ name
-            else putStrLn $ "+ Test failed: " ++ name ++
-                            ", because " ++ stdout ++
-                            " is not expected " ++ expected
+        (ecode, out, err) <- readProcessWithExitCode ruscExecutable [source, binary] ""
+        case ecode of
+            ExitSuccess -> do
+                -- Run
+                stdout <- readProcess rvmExecutable [binary] stdin
+                case expected of
+                    NormalStdOut eout ->
+                        if eout == stdout
+                            then putStrLn $ "+ Test passed: " ++ name
+                            else putStrLn $ "+ Test failed: " ++ name ++
+                                            ", because \"" ++ stdout ++
+                                            "\" is not the expected \"" ++ eout ++ "\""
+                    CompilerErrorOut s ->
+                        putStrLn $ "+ Test failed: " ++ name ++
+                                   ", because failure \"" ++ s ++ "\" is expected"
+            ExitFailure i -> case expected of
+                CompilerErrorOut s ->
+                    if s == err
+                        then putStrLn $ "+ Test passed: " ++ name
+                        else putStrLn $ "+ Test failed: " ++ name ++
+                                        ", because \"" ++ err ++
+                                        "\" is not the expected failure \"" ++ s ++ "\""
+                _ -> putStrLn $ "+ Test failed: " ++ name ++
+                                ", because it is expected to success, but fail with code " ++
+                                show i ++ ": " ++ err

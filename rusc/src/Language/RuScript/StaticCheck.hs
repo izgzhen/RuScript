@@ -32,8 +32,8 @@ data StaticState = StaticState {
 
 data ClassType = ClassType {
   _mInherit  :: Maybe Name
-, _attrTable :: M.Map Name Type
-, _mtdTable  :: M.Map Name FnSig
+, _attrTable :: M.Map Name (Visibility, Type)
+, _mtdTable  :: M.Map Name (Visibility, FnSig)
 }
 
 initStaticState :: StaticState
@@ -57,6 +57,8 @@ instance Check Program where
     check (Program mix) = do
         let stmts = lefts mix
         let decls = rights mix
+        -- note the order: we must load the information in
+        -- declarations first
         check decls
         check stmts
 
@@ -67,8 +69,8 @@ instance Check Declaration where
 
     check (ClassDecl name mFather attrs methods) = do
         addEmptyClass name mFather
-        mapM_ (\(_, binding) -> addAttr name binding) attrs
-        mapM_ (\(_, method)  -> addMethod name method) methods
+        mapM_ (\(vis, binding) -> addAttr   name vis binding) attrs
+        mapM_ (\(vis, method)  -> addMethod name vis method) methods
 
 instance Check Statement where
     check (SVar binding mExpr) = do
@@ -128,7 +130,8 @@ instance Infer Expr where
     infer (EVar x) = lookUpLocalVar x
     infer (EGet x attr) = do
         ty <- infer x
-        lookUpAttr ty attr
+        checkVis x ty attr
+        snd <$> lookUpAttr ty attr
 
     infer (EInvoke x f params) = do
         ty <- infer x
@@ -144,7 +147,7 @@ instance Infer Expr where
     infer (ENew cls params) = do
         attrs <- getAttrs cls
         tys <- mapM infer params
-        mapM_ (uncurry assertEq) $ zip (map snd attrs) tys
+        mapM_ (uncurry assertEq) $ zip (map (snd . snd) attrs) tys
         return $ TyClass cls
 
     infer (ELit lit) = case lit of
@@ -159,8 +162,19 @@ instance Infer LHS where
     infer (LVar x) = lookUpLocalVar x
     infer (LAttr x attr) = do
         ty <- infer x
-        lookUpAttr ty attr
+        checkVis x ty attr
+        snd <$> lookUpAttr ty attr
 
+
+-- Check visibility rule: If `x` is `this`, no check;
+-- else, check by querying the class table
+checkVis :: Name -> Type -> Name -> Static ()
+checkVis "this" _ _ = return ()
+checkVis _ ty attrName = do
+    (vis, _) <- lookUpAttr ty attrName
+    case vis of
+        Public  -> return ()
+        Private -> throwError $ "accessing private attribute " ++ attrName
 
 addFnSig :: FnSig -> Static ()
 addFnSig sig@(FnSig name _ _) = funcTable %= M.insert name sig
@@ -174,6 +188,7 @@ inMethod cls (FnSig _ bindings mRet) m = do
 
     old <- use localTable
     localTable .= M.fromList (bindings ++ [("self", TyClass cls)])
+
     ret <- m
 
     enclosedRet .= Nothing
@@ -200,11 +215,12 @@ addEmptyClass :: Name -> (Maybe Name) -> Static ()
 addEmptyClass name mFather =
     classTable %= M.insert name (ClassType mFather M.empty M.empty)
 
-addAttr :: Name -> Binding -> Static ()
-addAttr name (x, ty) = classTable %= M.update (Just . over attrTable (M.insert x ty)) name
+addAttr :: Name -> Visibility -> Binding -> Static ()
+addAttr name vis (x, ty) =
+    classTable %= M.update (Just . over attrTable (M.insert x (vis, ty))) name
 
-addMethod :: Name -> Method -> Static ()
-addMethod name = \case
+addMethod :: Name -> Visibility -> Method -> Static ()
+addMethod name vis = \case
     Virtual sig        -> addMethod' sig
     Concrete sig stmts -> do
         addMethod' sig
@@ -212,7 +228,7 @@ addMethod name = \case
     where
         addMethod' :: FnSig -> Static ()
         addMethod' sig@(FnSig x _ _) =
-            classTable %= M.update (Just . over mtdTable (M.insert x sig)) name
+            classTable %= M.update (Just . over mtdTable (M.insert x (vis, sig))) name
 
 assertEq :: (MonadError String m, Eq a, Show a) => a -> a -> m ()
 assertEq a b = assert (a == b) $ show a ++ " and " ++ show b ++ " are not equal"
@@ -230,8 +246,8 @@ getSigFromType method = \case
         t <- use classTable
         case M.lookup cls t of
             Just table -> case M.lookup method $ _mtdTable table of
-                Just sig -> return sig
-                Nothing -> throwError $ "has no idea of method " ++ method
+                Just (_, sig) -> return sig
+                Nothing       -> throwError $ "has no idea of method " ++ method
             Nothing -> throwError $ "has no idea of class " ++ cls
     other       -> queryBuiltinMethod method other
 
@@ -257,17 +273,17 @@ lookUpLocalVar x = do
         Just ty -> return ty
         Nothing -> throwError $ "can't find type of variable " ++ x
 
-lookUpAttr :: Type -> Name -> Static Type
+lookUpAttr :: Type -> Name -> Static (Visibility, Type)
 lookUpAttr ty name = do
     case ty of
         TyClass cls -> do
             bindings <- getAttrs cls
             case L.lookup name bindings of
-                Just attrTy -> return attrTy
+                Just attr -> return attr
                 Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ cls
-        other -> queryBuiltinAttr name other
+        other -> (,) Public <$> queryBuiltinAttr name other
 
-getAttrs :: Name -> Static [Binding]
+getAttrs :: Name -> Static [(Name, (Visibility, Type))]
 getAttrs cls = do
     t <- use classTable
     case M.lookup cls t of

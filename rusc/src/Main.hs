@@ -4,6 +4,7 @@ import Prelude hiding (writeFile, concat)
 import Data.ByteString.Lazy (writeFile, concat)
 import Data.Binary (encode)
 import Control.Monad (when)
+import System.Exit (exitFailure)
 
 import Language.RuScript.Serialize
 import Language.RuScript.Codegen
@@ -20,13 +21,15 @@ main = do
         let opt = parseOpt $ drop 2 args
         let target = args !! 1
         case parseProgram txt of
-            Left err -> putStrLn $ "Error in parsing: " ++ show err
+            Left err -> exitError $ "Error in parsing: " ++ show err
             Right program -> do
                 case checkProgram program of
-                    Left err -> putStrLn err
+                    Left err -> exitError $ "Error in checking: " ++ err
                     Right _  -> do
                         let bytecode = runCodegen program
                         when (_debugOpt opt) $ printCode bytecode
                         writeFile target (concat $ map (encode . serialize) bytecode)
         else putStrLn "usage: rusc <source> <target>"
 
+    where
+        exitError s = hPutStrLn stderr s >> exitFailure

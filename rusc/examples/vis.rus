@@ -1,0 +1,7 @@
+class X {
+    private pri : Int
+}
+
+var x : X = new X(1);
+
+x.pri = 2;
