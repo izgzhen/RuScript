@@ -1,0 +1,5 @@
+import inheritance
+
+var obj : inheritance.X = new inheritance.X();
+
+callId(obj);

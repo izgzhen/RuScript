@@ -23,13 +23,13 @@ pProgram = Program <$> many (whiteSpace *> pTopLevel <* whiteSpace)
 
 
 pTopLevel :: MyParser (Either Statement Declaration)
-pTopLevel = Left <$> pStatement
-        <|> Right <$> (pFuncDecl <|> pClassDecl <|> pImportDecl)
+pTopLevel = try (Left <$> pStatement)
+        <|> Right <$> (pImportDecl <|> pFuncDecl <|> pClassDecl)
 
 pImportDecl :: MyParser Declaration
 pImportDecl = ImportDecl <$> (reserved "import" *> whiteSpace *> (pIdent `sepEndBy` char '.'))
 
-pQualified :: MyParser (Qualified Name)
+pQualified :: MyParser Qualified
 pQualified = f <$> pIdent `sepEndBy` char '.'
   where
     f []  = error "parsed nothing out as qualified name"
@@ -92,7 +92,7 @@ pVisibility :: MyParser Visibility
 pVisibility = try (return Private <* reserved "private")
           <|> return Public
 
-pInherit :: MyParser (Maybe (Qualified String))
+pInherit :: MyParser (Maybe Qualified)
 pInherit = Just <$> (reserved "inherits" *> pQualified)
        <|> return Nothing
 

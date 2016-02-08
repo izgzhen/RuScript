@@ -5,6 +5,7 @@ import Data.ByteString.Lazy (writeFile, concat)
 import Data.Binary (encode)
 import Control.Monad (when)
 import System.Exit (exitFailure)
+import System.FilePath ((</>))
 
 import Language.RuScript.Serialize
 import Language.RuScript.Codegen
@@ -19,16 +20,18 @@ main = do
     hSetBuffering stdout NoBuffering
     args <- getArgs
     if (length args > 1) then do
-        txt <- readFile (head args)
         let opt = parseOpt $ drop 2 args
-        let target = args !! 1
+        let includeDir = _includeOpt opt
+        txt <- readFile (includeDir </> head args)
+        let target = includeDir </> (args !! 1)
         case parseProgram txt of
             Left err -> exitError $ "Error in parsing: " ++ show err
             Right program -> do
-                case checkProgram program of
+                program' <- resolveDeps includeDir program
+                print program'
+                case checkProgram program' of
                     Left err -> exitError $ "Error in checking: " ++ err
                     Right _  -> do
-                        program' <- resolveDeps program
                         let bytecode = if (_optimizeOpt opt)
                                         then optimize $ runCodegen program'
                                         else runCodegen program'

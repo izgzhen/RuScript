@@ -4,7 +4,8 @@ module Language.RuScript.AST where
 
 type Name = String
 
-data Qualified a = Qualified [String] a deriving (Eq, Ord)
+data Qualified = Qualified [String] String
+  deriving (Eq, Ord)
 
 type Binding = (Name, Type)
 
@@ -14,7 +15,7 @@ data Type = TyNil
           | TyBool
           | TyStr
           | TyList Type
-          | TyClass (Qualified Name)
+          | TyClass Qualified
           | TyBot -- undetermined type
           deriving (Show, Eq, Ord)
 
@@ -27,8 +28,8 @@ data Block = Branch Expr [Statement] [Statement]
 data Expr = EVar Name
           | EGet Name Name
           | EInvoke Expr Name [Expr]
-          | ECall (Qualified Name) [Expr]
-          | ENew (Qualified Name) [Expr]
+          | ECall Qualified [Expr]
+          | ENew Qualified [Expr]
           | ELit Literal
           | ETerm Term
           deriving (Show, Eq)
@@ -51,7 +52,7 @@ data Statement = SVar Binding (Maybe Expr)
                | SAssign LHS Expr
                | SBlock Block
                | SInvoke Expr Name [Expr]
-               | SCall (Qualified Name) [Expr]
+               | SCall Qualified [Expr]
                | SReturn Expr
                | SBreak
                deriving (Show, Eq)
@@ -64,12 +65,12 @@ data LHS = -- Variable, e.g. x
          deriving (Show, Eq)
 
 -- Top-level construct
-data FnSig = FnSig (Qualified Name) [Binding] (Maybe Type) deriving (Show, Eq)
+data FnSig = FnSig Qualified [Binding] (Maybe Type) deriving (Show, Eq)
 
 data Declaration = -- Function declaration
                    FnDecl FnSig [Statement]
                    -- Class declaration
-                 | ClassDecl (Qualified Name) (Maybe (Qualified Name)) [(Visibility, Attr)] [(Visibility, Method)]
+                 | ClassDecl Qualified (Maybe Qualified) [(Visibility, Attr)] [(Visibility, Method)]
                    -- e.g. after `import std`, the class `std.pair` can be used
                  | ImportDecl [String]
                    deriving (Show, Eq)
@@ -85,7 +86,7 @@ data Method = Virtual  FnSig
 data Program = Program [Either Statement Declaration] deriving (Show, Eq)
 
 
-instance Show (Qualified String) where
+instance Show Qualified where
   show (Qualified [] x) = x
   show (Qualified ss x) = splitByDot ss ++ "." ++ x
     where

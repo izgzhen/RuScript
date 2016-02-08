@@ -19,8 +19,8 @@ type EnclosedLoop   = (Pos, Label)
 type Codegen        = State CodegenState
 
 data CodegenState = CodegenState {
-    _classTable     :: M.Map (Qualified Name) Int,
-    _funcTable      :: M.Map (Qualified Name) Int,
+    _classTable     :: M.Map Qualified Int,
+    _funcTable      :: M.Map Qualified Int,
     _bytecode       :: V.Vector ByteCode,
     _enclosed       :: Maybe EnclosedLoop,
     _labelPos       :: M.Map Label Pos,
@@ -130,7 +130,7 @@ invoke expr f exprs = do
     flatten expr
     emit $ INVOKE f
 
-call :: Qualified Name -> [Expr] -> Codegen ()
+call :: Qualified -> [Expr] -> Codegen ()
 call f exprs = do
     let exprs' = reverse exprs
     flatten exprs'
@@ -160,7 +160,7 @@ instance ToByteCode Declaration where
 instance ToByteCode a => ToByteCode [a] where
     flatten = mapM_ flatten
 
-flattenFunc :: Maybe (Qualified Name) -> Qualified Name -> [Binding] -> [Statement] -> Codegen ()
+flattenFunc :: Maybe Qualified -> Qualified -> [Binding] -> [Statement] -> Codegen ()
 flattenFunc mClsName _ bindings stmts = do
         nLocals <- inScope mClsName bindings $ do
             flatten stmts
@@ -168,7 +168,7 @@ flattenFunc mClsName _ bindings stmts = do
             return nLocals
         emit $ EBODY nLocals
 
-inScope :: Maybe (Qualified Name) -> [Binding] -> Codegen a -> Codegen a
+inScope :: Maybe Qualified -> [Binding] -> Codegen a -> Codegen a
 inScope mClsName bindings gen = do
     let bindings' = case mClsName of
                         Just clsName -> ("self", TyClass clsName) : bindings
@@ -255,7 +255,7 @@ pushVar = withVar PUSH
 emit :: ByteCode -> Codegen ()
 emit code = bytecode %= flip V.snoc code
 
-new :: Qualified Name -> Codegen ()
+new :: Qualified -> Codegen ()
 new x = lookupClass x >>= emit . NEW
 
 withLoop :: (Pos -> Label -> Codegen a) -> Codegen a
@@ -269,24 +269,24 @@ isConcrete :: Method -> Bool
 isConcrete (Concrete _ _) = True
 isConcrete _ = False
 
-lookupClass :: Qualified Name -> Codegen Int
+lookupClass :: Qualified -> Codegen Int
 lookupClass name = do
     t <- use classTable
     case M.lookup name t of
         Nothing  -> error $ "can't find class " ++ show name
         Just idx -> return idx
 
-addClass :: Qualified Name -> Codegen ()
+addClass :: Qualified -> Codegen ()
 addClass name = classTable %= (\t -> M.insert name (M.size t) t)
 
-lookupFunc :: Qualified Name -> Codegen Int
+lookupFunc :: Qualified -> Codegen Int
 lookupFunc name = do
     t <- use funcTable
     case M.lookup name t of
         Nothing  -> error $ "can't find class " ++ show name
         Just idx -> return idx
 
-addFunc :: Qualified Name -> Codegen ()
+addFunc :: Qualified -> Codegen ()
 addFunc name = funcTable %= (\t -> M.insert name (M.size t) t)
 
 

@@ -25,13 +25,13 @@ import qualified Data.List as L
 
 data StaticState = StaticState {
   _localTable  :: M.Map Name Type
-, _funcTable   :: M.Map (Qualified Name) FnSig
-, _classTable  :: M.Map (Qualified Name) ClassType
+, _funcTable   :: M.Map Qualified FnSig
+, _classTable  :: M.Map Qualified ClassType
 , _enclosedRet :: Maybe Type
 }
 
 data ClassType = ClassType {
-  _mInherit  :: Maybe (Qualified Name)
+  _mInherit  :: Maybe Qualified
 , _attrTable :: M.Map Name (Visibility, Type)
 , _mtdTable  :: M.Map Name (Visibility, FnSig)
 }
@@ -71,6 +71,8 @@ instance Check Declaration where
         addEmptyClass name mFather
         mapM_ (\(vis, binding) -> addAttr   name vis binding) attrs
         mapM_ (\(vis, method)  -> addMethod name vis method) methods
+
+    check (ImportDecl _) = return ()
 
 instance Check Statement where
     check (SVar binding mExpr) = do
@@ -182,7 +184,7 @@ addFnSig :: FnSig -> Static ()
 addFnSig sig@(FnSig name _ _) = funcTable %= M.insert name sig
 
 
-inMethod :: Qualified Name -> FnSig -> Static a -> Static a
+inMethod :: Qualified -> FnSig -> Static a -> Static a
 inMethod cls (FnSig _ bindings mRet) m = do
     case mRet of
         Just ty -> enclosedRet .= Just ty
@@ -213,15 +215,15 @@ inFunc (FnSig _ bindings mRet) m = do
     return ret
 
 
-addEmptyClass :: Qualified Name -> (Maybe (Qualified Name)) -> Static ()
+addEmptyClass :: Qualified -> (Maybe Qualified) -> Static ()
 addEmptyClass name mFather =
     classTable %= M.insert name (ClassType mFather M.empty M.empty)
 
-addAttr :: Qualified Name -> Visibility -> Binding -> Static ()
+addAttr :: Qualified -> Visibility -> Binding -> Static ()
 addAttr name vis (x, ty) =
     classTable %= M.update (Just . over attrTable (M.insert x (vis, ty))) name
 
-addMethod :: Qualified Name -> Visibility -> Method -> Static ()
+addMethod :: Qualified -> Visibility -> Method -> Static ()
 addMethod name vis = \case
     Virtual sig        -> addMethod' sig
     Concrete sig stmts -> do
@@ -273,7 +275,7 @@ getSigFromType method = \case
             Nothing       -> throwError $ "has no idea of method " ++ method
     other       -> queryBuiltinMethod method other
 
-lookupClass :: Qualified Name -> Static ClassType
+lookupClass :: Qualified -> Static ClassType
 lookupClass cls = do
     t <- use classTable
     case M.lookup cls t of
@@ -281,7 +283,7 @@ lookupClass cls = do
         Nothing    -> throwError $ "I has no idea of class " ++ show cls
 
 
-getSigOfFunc :: Qualified Name -> Static FnSig
+getSigOfFunc :: Qualified -> Static FnSig
 getSigOfFunc f = do
     t <- use funcTable
     case M.lookup f t of
@@ -312,7 +314,7 @@ lookUpAttr ty name = do
                 Nothing -> throwError $ "can't find type of attribute " ++ name ++ " of class " ++ show cls
         other -> (,) Public <$> queryBuiltinAttr name other
 
-getAttrs :: Qualified Name -> Static [(Name, (Visibility, Type))]
+getAttrs :: Qualified -> Static [(Name, (Visibility, Type))]
 getAttrs cls = do
     t <- use classTable
     case M.lookup cls t of
