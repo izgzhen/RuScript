@@ -86,7 +86,7 @@ pClassDecl = do
         as <- many $ try ((,) <$> pVisibility <*> pBinding)
         ms <- many ((,) <$> pVisibility <*> pMethod)
         return (as, ms)
-    return $ ClassDecl className mInherits as ms
+    return $ ClassDecl (Qualified [] className) mInherits as ms
 
 pVisibility :: MyParser Visibility
 pVisibility = try (return Private <* reserved "private")

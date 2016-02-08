@@ -12,6 +12,7 @@ import Language.RuScript.Parser
 import Language.RuScript.StaticCheck
 import Language.RuScript.Option
 import Language.RuScript.Optimize
+import Language.RuScript.Import
 
 main :: IO ()
 main = do
@@ -27,9 +28,10 @@ main = do
                 case checkProgram program of
                     Left err -> exitError $ "Error in checking: " ++ err
                     Right _  -> do
+                        program' <- resolveDeps program
                         let bytecode = if (_optimizeOpt opt)
-                                        then optimize $ runCodegen program
-                                        else runCodegen program
+                                        then optimize $ runCodegen program'
+                                        else runCodegen program'
                         when (_debugOpt opt) $ printCode bytecode
                         writeFile target (concat $ map (encode . serialize) bytecode)
         else putStrLn "usage: rusc <source> <target>"

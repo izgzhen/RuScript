@@ -68,10 +68,9 @@ instance Check Declaration where
         inFunc sig $ check stmts
 
     check (ClassDecl name mFather attrs methods) = do
-        let qualified = (Qualified [] name)
-        addEmptyClass qualified mFather
-        mapM_ (\(vis, binding) -> addAttr   qualified vis binding) attrs
-        mapM_ (\(vis, method)  -> addMethod qualified vis method) methods
+        addEmptyClass name mFather
+        mapM_ (\(vis, binding) -> addAttr   name vis binding) attrs
+        mapM_ (\(vis, method)  -> addMethod name vis method) methods
 
 instance Check Statement where
     check (SVar binding mExpr) = do

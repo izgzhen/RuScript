@@ -69,7 +69,7 @@ data FnSig = FnSig (Qualified Name) [Binding] (Maybe Type) deriving (Show, Eq)
 data Declaration = -- Function declaration
                    FnDecl FnSig [Statement]
                    -- Class declaration
-                 | ClassDecl Name (Maybe (Qualified Name)) [(Visibility, Attr)] [(Visibility, Method)]
+                 | ClassDecl (Qualified Name) (Maybe (Qualified Name)) [(Visibility, Attr)] [(Visibility, Method)]
                    -- e.g. after `import std`, the class `std.pair` can be used
                  | ImportDecl [String]
                    deriving (Show, Eq)
