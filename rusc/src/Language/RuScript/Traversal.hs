@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, RankNTypes #-}
 -- Construct traversal utilities by Multiplate
 
 module Language.RuScript.Traversal where
@@ -11,7 +11,7 @@ import Data.Functor.Constant
 import Data.Functor.Identity
 
 
-temPlate "Plate" [ "Qualified", "Type", "Block", "Expr", "Literal", "Statement", "LHS" ]
+temPlate "Plate" [ "Qualified", "Type", "Block", "Expr", "Literal", "Statement", "LHS", "FnSig" ]
 
-mapper :: Plate Identity -> Statement -> Statement
-mapper plate = traverseFor statement_ (mapFamily plate)
+mapper :: Plate Identity -> (forall f. Plate f -> a -> f a) -> a -> a
+mapper plate selector = traverseFor selector (mapFamily plate)

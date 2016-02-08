@@ -1,5 +1,5 @@
 import inheritance
 
-var obj : inheritance.X = new inheritance.X();
+var obj : inheritance::X = new inheritance::X();
 
-callId(obj);
+inheritance::callId(obj);

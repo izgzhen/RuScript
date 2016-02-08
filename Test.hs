@@ -10,40 +10,45 @@ data Result = NormalStdOut String
             | CompilerErrorOut String
 
 ruscExecutable :: String
-ruscExecutable = "./.stack-work/dist/x86_64-osx/Cabal-1.22.4.0/build/rusc/rusc"
+ruscExecutable = "rusc/.stack-work/dist/x86_64-osx/Cabal-1.22.4.0/build/rusc/rusc"
 
-demoDir :: String
-demoDir = "examples"
+testsDir :: String
+testsDir = "tests"
 
 rvmExecutable :: String
-rvmExecutable = "../target/debug/main"
+rvmExecutable = "rvm/target/debug/main"
 
 testList :: [(String, String, Result)] -- Name, stdin, expected stdout
 testList = [ ("inheritance", "", NormalStdOut "1")
            , ("add",         "", NormalStdOut "3")
            , ("control",     "", NormalStdOut "2")
-           , ("vis",         "", CompilerErrorOut "Error in checking: accessing private attribute pri\n")
            , ("nil",         "", NormalStdOut "nil")
            , ("list",        "", NormalStdOut "[1]")
-           , ("invoke",      "", NormalStdOut "6") ]
+           , ("invoke",      "", NormalStdOut "6")
+           , ("mod",         "", NormalStdOut "1")
+           , ("vis",         "", CompilerErrorOut "Error in checking: accessing private attribute pri\n") ]
 
+main :: IO ()
 main = do
     putStrLn $ "Building artifacts..."
     -- Compile VM
-    callProcess "cargo" ["build", "-q"]
+    _ <- readCreateProcess ((shell "cargo build -q") { cwd = Just "rvm" }) ""
     -- Compile Compiler
-    callProcess "stack" ["build"]
+    _ <- readCreateProcess ((shell "stack build") { cwd = Just "rusc" }) ""
 
     putStrLn $ "Testing " ++ show (length testList) ++ " cases..."
     flip mapM_ testList $ \(name, stdin, expected) -> do
-        let source = demoDir </> name ++ ".rus"
-        let binary = demoDir </> name ++ ".rusb"
+        let source = name ++ ".rus"
+        let binary = name ++ ".rusb"
         -- Compile
-        (ecode, out, err) <- readProcessWithExitCode ruscExecutable [source, binary] ""
+        (ecode, out, err) <- readProcessWithExitCode
+                                ruscExecutable
+                                [source, binary, "-i", testsDir]
+                                ""
         case ecode of
             ExitSuccess -> do
                 -- Run
-                stdout <- readProcess rvmExecutable [binary] stdin
+                stdout <- readProcess rvmExecutable [testsDir </> binary] stdin
                 case expected of
                     NormalStdOut eout ->
                         if eout == stdout

@@ -30,7 +30,7 @@ pImportDecl :: MyParser Declaration
 pImportDecl = ImportDecl <$> (reserved "import" *> whiteSpace *> (pIdent `sepEndBy` char '.'))
 
 pQualified :: MyParser Qualified
-pQualified = f <$> pIdent `sepEndBy` char '.'
+pQualified = f <$> pIdent `sepEndBy` string "::"
   where
     f []  = error "parsed nothing out as qualified name"
     f xs  = let xs' = reverse xs

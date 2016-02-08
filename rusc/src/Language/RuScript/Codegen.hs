@@ -139,6 +139,7 @@ call f exprs = do
 
 
 instance ToByteCode Declaration where
+    flatten (ImportDecl _) = return ()
     flatten (FnDecl (FnSig name bindings _) stmts) = do
         addFunc name
         emit SFUNC

@@ -22,8 +22,6 @@ fn main() {
                     Some(ref n) => n.clone(),
                 };
 
-                println!("times {:?}", times);
-
                 for _ in 0..times {
                     let mut stack = vec![];
                     interpreter.run_frame(&e, &mut stack, top_n, &top);

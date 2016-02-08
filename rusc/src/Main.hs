@@ -28,7 +28,7 @@ main = do
             Left err -> exitError $ "Error in parsing: " ++ show err
             Right program -> do
                 program' <- resolveDeps includeDir program
-                print program'
+                when (_debugOpt opt) $ print program'
                 case checkProgram program' of
                     Left err -> exitError $ "Error in checking: " ++ err
                     Right _  -> do

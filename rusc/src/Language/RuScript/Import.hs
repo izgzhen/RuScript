@@ -8,6 +8,8 @@ import System.IO
 import System.Exit
 import Data.Either (lefts, rights)
 import Data.Generics.Multiplate
+import Data.Functor.Identity
+import Control.Arrow (second)
 
 import Language.RuScript.AST
 import Language.RuScript.StaticCheck
@@ -46,8 +48,6 @@ resolveDeps includeDir program@(Program mixed) = do
     decls <- concat <$> mapM (importModule includeDir) imports
     return $ Program (mixed ++ map Right decls)
 
-
-
 class Qualifiable a where
     qualify :: [String] -> a -> a
 
@@ -57,25 +57,32 @@ instance Qualifiable a => Qualifiable [a] where
 instance Qualifiable Declaration where
     qualify qualifier = \case
         ImportDecl _ -> error "unexpected ImportDecl in qualification process"
-        FnDecl (FnSig (Qualified _ name) bindings mTy) stmts ->
-            FnDecl (FnSig (Qualified qualifier name) bindings mTy)
-                   (qualify qualifier stmts)
+        FnDecl sig stmts -> FnDecl (qualify qualifier sig) (qualify qualifier stmts)
         ClassDecl (Qualified _ name) mInherit attrs mtds ->
-            let mInherit' = flip fmap mInherit $ \case
-                                Qualified [] iname -> Qualified qualifier iname
-                                others             -> others
-                mtds' = flip map mtds' $ \(vis, mtd) -> case mtd of
-                            Virtual sig       -> (vis, Virtual sig)
-                            Concrete sig body -> (vis, Concrete sig $ qualify qualifier body)
+            let mInherit' = qualify qualifier <$> mInherit
+                mtds' = flip map mtds $ \(vis, mtd) -> case mtd of
+                            Virtual sig       -> (vis, Virtual  (qualify qualifier sig))
+                            Concrete sig body -> (vis, Concrete (qualify qualifier sig)
+                                                                (qualify qualifier body))
             in  ClassDecl (Qualified qualifier name) mInherit' attrs mtds'
 
 instance Qualifiable Statement where
-    qualify qualifier = mapper plate
-        where
-            plate = purePlate {
-              qualified_ = f
-            }
+    qualify qualifier = mapper (qualifyPlate qualifier) statement_
 
-            f (Qualified [] name) = pure $ Qualified qualifier name
-            f x = pure x
+instance Qualifiable Type where
+    qualify qualifier = mapper (qualifyPlate qualifier) type_
+
+instance Qualifiable Qualified where
+    qualify qualifier = \case
+        Qualified [] name -> Qualified qualifier name
+        other             -> other
+
+instance Qualifiable FnSig where
+    qualify qualifier (FnSig qualified bindings mRetTy) =
+        FnSig (qualify qualifier qualified)
+              (map (second $ qualify qualifier) bindings)
+              (qualify qualifier <$> mRetTy)
+
+qualifyPlate :: [String] -> Plate Identity
+qualifyPlate qualifier = purePlate { qualified_ = pure . qualify qualifier }
 
