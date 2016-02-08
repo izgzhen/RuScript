@@ -12,7 +12,8 @@ RuScript
 Please refer to `spec`
 
 ## TODOs
-* Module system and `prelude` library
+* `.rusi` Interface parser
+    + Note: Whether or not to attach a `self` to each method signature
 * Concurrent primitives
 
 ## Performance Issue

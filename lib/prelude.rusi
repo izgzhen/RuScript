@@ -1,0 +1,26 @@
+# RuScript Interface File as Prelude
+
+type Int {
+    fn add(x:Int) -> Int;
+    fn print();
+    fn le(x:Int) -> Bool;
+}
+
+type Bool {
+    fn print();
+    fn not() -> Bool;
+}
+
+type Nil {
+    fn print();
+}
+
+type Str {
+    fn print();
+}
+
+type List<a> {
+    fn print();
+    fn cons(x: a) -> List<a>;
+}
+
