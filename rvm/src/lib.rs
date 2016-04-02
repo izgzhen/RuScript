@@ -1,11 +1,11 @@
-//! 
+//!
 //! The RuScript Virtual Machine (RVM)
-//! 
+//!
 //! ## Loading stage
 //! loader read in bytes, deserialize them
 //! into bytecodes, structure them into declarations
-//! and top-level bytecodes. 
-//! 
+//! and top-level bytecodes.
+//!
 //! ## Execution stage
 //! The executor will start from top-level bytecodes,
 //! transfer control from and to new frames initialized
@@ -29,7 +29,6 @@
 #![crate_name = "rvm"]
 
 #![feature(plugin, custom_derive, custom_attribute, box_syntax, test)]
-#![feature(convert)]
 #![plugin(gc_plugin)]
 extern crate gc;
 extern crate test;

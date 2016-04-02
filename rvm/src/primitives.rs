@@ -1,4 +1,4 @@
-//! 
+//!
 //! Primitive types object
 //!
 
@@ -28,34 +28,34 @@ pub struct StrObj {
 pub enum ListObj {
     Empty,
     Cons {
-        hd: Gc<DynObj>,
-        tl: Gc<DynObj>,
+        hd: Cgc<DynObj>,
+        tl: Cgc<DynObj>,
     },
 }
 
 
 impl IntObj {
-    pub fn new(i: Integer) -> Gc<DynObj> {
-        Gc::new(DynObj::Int(IntObj { val : i }))
+    pub fn new(i: Integer) -> Cgc<DynObj> {
+        Cgc::new(DynObj::Int(IntObj { val : i }))
     }
 }
 
 impl BoolObj {
-    pub fn new(b: bool) -> Gc<DynObj> {
-        Gc::new(DynObj::Bool(BoolObj { val : b }))
+    pub fn new(b: bool) -> Cgc<DynObj> {
+        Cgc::new(DynObj::Bool(BoolObj { val : b }))
     }
 }
 
 
 impl StrObj {
-    pub fn new(s: String) -> Gc<DynObj> {
-        Gc::new(DynObj::Str(StrObj { val : s }))
+    pub fn new(s: String) -> Cgc<DynObj> {
+        Cgc::new(DynObj::Str(StrObj { val : s }))
     }
 }
 
 impl ListObj {
-    pub fn new(head: Gc<DynObj>, tail: Gc<DynObj>) -> Gc<DynObj> {
-        Gc::new(DynObj::List(Cons {
+    pub fn new(head: Cgc<DynObj>, tail: Cgc<DynObj>) -> Cgc<DynObj> {
+        Cgc::new(DynObj::List(Cons {
             hd : head,
             tl : tail,
         }))
@@ -74,7 +74,7 @@ impl ListObj {
         }
     }
 
-    pub fn at(&self, i: Integer) -> Gc<DynObj> {
+    pub fn at(&self, i: Integer) -> Cgc<DynObj> {
         match self {
             &Empty => panic!("Can't access element of an empty list"),
             &Cons{ ref hd, ref tl } => {
@@ -93,7 +93,7 @@ impl ListObj {
 
 impl Object for IntObj {
     /// Built-in functions: `add`, `print`
-    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
+    fn invoke(&self, name : &str, stack: &mut Vec<Cgc<DynObj>>, _ : &Env) {
         match name {
             "add" => {
                 let b = stack.pop().unwrap();
@@ -130,7 +130,7 @@ impl Object for IntObj {
 
 impl Object for BoolObj {
     /// Built-in functions: `not`, `print`
-    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env){
+    fn invoke(&self, name : &str, stack: &mut Vec<Cgc<DynObj>>, _ : &Env){
         match name {
             "not" => {
                 stack.push(BoolObj::new(!self.val));
@@ -148,7 +148,7 @@ impl Object for BoolObj {
 
 impl Object for StrObj {
     /// Built-in functions: `print`
-    fn invoke(&self, name : &str, _: &mut Vec<Gc<DynObj>>, _ : &Env) {
+    fn invoke(&self, name : &str, _: &mut Vec<Cgc<DynObj>>, _ : &Env) {
         match name {
             other => invoke_fail("StrObj", other)
         }
@@ -164,11 +164,11 @@ impl Object for StrObj {
 
 impl Object for ListObj {
     /// Built-in functions: `print`
-    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, _ : &Env) {
+    fn invoke(&self, name : &str, stack: &mut Vec<Cgc<DynObj>>, _ : &Env) {
         match name {
             "cons" => {
                 let b = stack.pop().unwrap();
-                stack.push(ListObj::new(b, Gc::new(DynObj::List(self.clone()))));
+                stack.push(ListObj::new(b, Cgc::new(DynObj::List(self.clone()))));
             },
             "len" => {
                 stack.push(IntObj::new(self.len()));
@@ -217,4 +217,3 @@ impl Object for ListObj {
 
     fn tyof(&self) -> String { "<list>".to_string() }
 }
-

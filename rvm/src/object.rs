@@ -4,7 +4,7 @@
 //! Every thing allocated in heap, traced by GC,
 //! and referenced through local variable and global
 //! stack should implement this trait interface
-//! 
+//!
 //!
 
 use gc::*;
@@ -14,15 +14,15 @@ use dispatch::*;
 
 pub trait Object : Trace {
     #[allow(unused_variables)]
-    fn invoke(&self, name: &str, stack: &mut Vec<Gc<DynObj>>, env: &Env);
+    fn invoke(&self, name: &str, stack: &mut Vec<Cgc<DynObj>>, env: &Env);
 
     #[allow(unused_variables)]
-    fn get(&self, name: &str, env: &Env) -> Gc<DynObj> {
+    fn get(&self, name: &str, env: &Env) -> Cgc<DynObj> {
         access_fail(&self.tyof(), name)
     }
 
     #[allow(unused_variables)]
-    fn set(&mut self, name: &str, new: &Gc<DynObj>, env: &Env) {
+    fn set(&mut self, name: &str, new: &Cgc<DynObj>, env: &Env) {
         access_fail(&self.tyof(), name);
     }
 
@@ -35,6 +35,6 @@ pub fn invoke_fail(ty: &str, name: &str) {
     panic!("{:?} has no such method {:?}", ty, name)
 }
 
-pub fn access_fail<N>(ty: &str, name: N) -> Gc<DynObj> where N: Debug {
+pub fn access_fail<N>(ty: &str, name: N) -> Cgc<DynObj> where N: Debug {
     panic!("{:?} has no such attr {:?}", ty, name)
 }
