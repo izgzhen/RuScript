@@ -10,7 +10,7 @@ data Result = NormalStdOut String
             | CompilerErrorOut String
 
 ruscExecutable :: String
-ruscExecutable = "rusc/.stack-work/dist/x86_64-osx/Cabal-1.22.4.0/build/rusc/rusc"
+ruscExecutable = "rusc/.stack-work/dist/x86_64-osx/Cabal-1.22.5.0/build/rusc/rusc"
 
 testsDir :: String
 testsDir = "tests"
