@@ -1,6 +1,6 @@
 [package]
 name = "rvm"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Zhen Zhang <izgzhen@gmail.com>"]
 
 [lib]
@@ -12,9 +12,9 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies.gc]
-path = "../../rust-lang/rust-gc/gc"
-version = "0.0.2"
+path = "../rust-gc/gc"
+version = "0.2.0"
 
-[dependencies.gc_plugin]
-path = "../../rust-lang/rust-gc/gc_plugin"
-version = "0.0.1"
+[dependencies.gc_derive]
+path = "../rust-gc/gc_derive"
+version = "0.2.0"

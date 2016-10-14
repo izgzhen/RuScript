@@ -29,9 +29,9 @@ impl Interpreter {
     }
 
     /// Initialize and execute a frame
-    pub fn run_frame(&self, env: &Env, stack: &mut Vec<Cgc<DynObj>>,
+    pub fn run_frame(&self, env: &Env, stack: &mut Vec<Gc<DynObj>>,
                      n_locals: usize, code: &Vec<ByteCode>) {
-        let mut locals : Vec<Cgc<DynObj>> = init_vec(n_locals, Cgc::new(DynObj::Non));
+        let mut locals : Vec<Gc<DynObj>> = init_vec(n_locals, Gc::new(DynObj::Non));
 
         let mut pc: usize = 0;
         while pc < code.len() {
@@ -49,7 +49,7 @@ impl Interpreter {
                 },
                 // Invoke method of instance (TOS)
                 INVOKE(ref mtd_name) => {
-                    let recv: Cgc<DynObj> = stack.pop().unwrap();
+                    let recv: Gc<DynObj> = stack.pop().unwrap();
                     match *recv {
                         // Check type at runtime
                         DynObj::Ist(ref istobj) => {
@@ -84,8 +84,8 @@ impl Interpreter {
     }
 
     /// Interpret in-frame instructions
-    fn interpret(&self, env: &Env, inst: &ByteCode, stack: &mut Vec<Cgc<DynObj>>,
-                 locals: &mut Vec<Cgc<DynObj>>, pc: &mut usize) {
+    fn interpret(&self, env: &Env, inst: &ByteCode, stack: &mut Vec<Gc<DynObj>>,
+                 locals: &mut Vec<Gc<DynObj>>, pc: &mut usize) {
         match inst {
             &JUMP(offset) => {
                 // offset might be negative
@@ -117,7 +117,7 @@ impl Interpreter {
                 let tos = stack.pop().unwrap();
                 let mut ntos_copy: DynObj = (*stack.pop().unwrap()).clone();
                 ntos_copy.set(attr_name, &tos, env);
-                stack.push(Cgc::new(ntos_copy));
+                stack.push(Gc::new(ntos_copy));
 
                 /*
                     Although in fact we copied the object entirely, but only
@@ -142,10 +142,10 @@ impl Interpreter {
                 }
             },
             &PUSHLIST => {
-                stack.push(Cgc::new(DynObj::List(ListObj::Empty)));
+                stack.push(Gc::new(DynObj::List(ListObj::Empty)));
             },
             &PUSHNIL => {
-                stack.push(Cgc::new(DynObj::Non));
+                stack.push(Gc::new(DynObj::Non));
             }
             other => { panic!("{:?}'s interpretation is not implemented", other) }
         }
@@ -154,7 +154,7 @@ impl Interpreter {
 
 /// Jump if TOS is bool object and its value is equal to `cond`
 #[inline]
-fn jump_if(stack: &mut Vec<Cgc<DynObj>>, pc: &mut usize, cond: bool, offset: Integer) {
+fn jump_if(stack: &mut Vec<Gc<DynObj>>, pc: &mut usize, cond: bool, offset: Integer) {
     let tos = stack.pop().unwrap();
     match *tos {
         DynObj::Bool(ref boolobj) => {

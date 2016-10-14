@@ -27,7 +27,7 @@ pub enum DynObj {
 
 /// Dispatch Object trait calls explicitly at runtime
 impl Object for DynObj {
-    fn invoke(&self, name : &str, stack: &mut Vec<Cgc<DynObj>>, env: &Env){
+    fn invoke(&self, name : &str, stack: &mut Vec<Gc<DynObj>>, env: &Env){
         if name == "print" {
             print!("{}", &self.to_string());
             return
@@ -43,7 +43,7 @@ impl Object for DynObj {
         }
     }
 
-    fn get(&self, name: &str, env: &Env) -> Cgc<DynObj> {
+    fn get(&self, name: &str, env: &Env) -> Gc<DynObj> {
         match self {
             &Int(ref intobj) => intobj.get(name, env),
             &Bool(ref boolobj) => boolobj.get(name, env),
@@ -54,7 +54,7 @@ impl Object for DynObj {
         }
     }
 
-    fn set(&mut self, name: &str, new: &Cgc<DynObj>, env: &Env) {
+    fn set(&mut self, name: &str, new: &Gc<DynObj>, env: &Env) {
         match self {
             &mut Int(ref mut intobj) => intobj.set(name, new, env),
             &mut Bool(ref mut boolobj) => boolobj.set(name, new, env),

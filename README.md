@@ -1,6 +1,12 @@
 RuScript
 ------
 
+## Build
+
+Note that you might need nightly rust to build the `rvm` part.
+
+1. `git submodule update` to fetch `rust-gc` dev source
+
 ## Features
 
 * Safe runtime written in Rust with garbage collection

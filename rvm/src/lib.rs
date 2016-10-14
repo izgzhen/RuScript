@@ -28,8 +28,10 @@
 
 #![crate_name = "rvm"]
 
-#![feature(plugin, custom_derive, custom_attribute, box_syntax, test)]
-#![plugin(gc_plugin)]
+#![feature(proc_macro, custom_derive, test)]
+
+#[macro_use]
+extern crate gc_derive;
 extern crate gc;
 extern crate test;
 
