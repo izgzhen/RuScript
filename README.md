@@ -3,9 +3,15 @@ RuScript
 
 ## Build
 
-Note that you might need nightly rust to build the `rvm` part.
+Tool-chain dependencies: Rust (nightly), Haskell (8.01)
 
 1. `git submodule update` to fetch `rust-gc` dev source
+2. `runghc Test.hs` to run unit tests
+
+To build the `rvm` and `rusc` separately:
+
+1. `rvm`: `cd rvm; cargo build`
+2. `rusc`: `cd rusc; stack build`
 
 ## Features
 

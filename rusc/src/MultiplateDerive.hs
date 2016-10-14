@@ -12,7 +12,7 @@ temPlate plateName tyNames = do
   decls <- forM tyNames $ \tyName -> do
       Just ty <- lookupTypeName tyName
       reify ty >>= \case
-          TyConI (DataD _ _ _ constrs _) -> return (tyName, constrs)
+          TyConI (DataD _ _ _ _ constrs _) -> return (tyName, constrs)
           other -> error $ "Can't read data type declaration: " ++ show other
 
   clauses <- mapM (genInstance (extractNames decls)) decls
@@ -24,7 +24,7 @@ temPlate plateName tyNames = do
                                                                 (VarE $ mkName (lowerHead n ++ "_")))
                                                     tyNames)
                             []]
-  let instDecl = InstanceD []
+  let instDecl = InstanceD Nothing []
                            (AppT (ConT $ mkName "Multiplate") (ConT $ mkName plateName))
                            [FunD (mkName "multiplate")
                                  [Clause [VarP $ mkName "child"]
@@ -36,9 +36,11 @@ temPlate plateName tyNames = do
 
   return $ [ platDecl, instDecl ]
     where
-        platDecl = DataD [] (mkName plateName) [binder] [constr] []
+        platDecl = DataD [] (mkName plateName) [binder] Nothing [constr] []
         binder   = PlainTV (mkName "f")
-        constr   = RecC (mkName plateName) $ map (\s -> (mkName (lowerHead s ++ "_"), NotStrict, toType s)) tyNames
+        constr   = RecC (mkName plateName) $ map (\s -> (mkName (lowerHead s ++ "_"),
+                                                         Bang NoSourceUnpackedness NoSourceStrictness,
+                                                         toType s)) tyNames
         toType s = let ty = ConT $ mkName s
                    in  AppT (AppT ArrowT ty) (AppT (VarT (mkName "f")) ty)
         extractNames = map fst

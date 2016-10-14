@@ -1,3 +1,6 @@
 [submodule "rust-gc"]
 	path = rust-gc
 	url = https://github.com/Manishearth/rust-gc
+[submodule "multiplate"]
+	path = multiplate
+	url = https://github.com/izgzhen/multiplate
