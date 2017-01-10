@@ -13,8 +13,8 @@ path = "src/main.rs"
 
 [dependencies.gc]
 path = "../rust-gc/gc"
-version = "0.2.0"
+version = "0.2.1"
 
 [dependencies.gc_derive]
 path = "../rust-gc/gc_derive"
-version = "0.2.0"
+version = "0.2.1"
